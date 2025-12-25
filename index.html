@@ -1,198 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Useful Tools Hub</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<style>
-:root {
-  --bg: #0f0f0f;
-  --card: #1b1b1b;
-  --text: #ffffff;
-  --muted: #9ca3af;
-  --accent: #4dabf7;
-  --border: #2a2a2a;
-}
-
-.light {
-  --bg: #f3f4f6;
-  --card: #ffffff;
-  --text: #111827;
-  --muted: #6b7280;
-  --accent: #2563eb;
-  --border: #e5e7eb;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  padding: 80px 20px 30px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-}
-
-#themeToggle {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--text);
-  cursor: pointer;
-  font-size: 20px;
-}
-
-h1 {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.controls {
-  max-width: 900px;
-  margin: auto;
-  display: grid;
-  grid-template-columns: 1fr 180px 100px;
-  gap: 12px;
-  margin-bottom: 32px;
-}
-
-.controls input,
-.controls select,
-.controls button {
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--text);
-}
-
-.controls button {
-  cursor: pointer;
-}
-
-section {
-  max-width: 1200px;
-  margin: auto;
-  margin-bottom: 36px;
-}
-
-section h3 {
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
-}
-
-.card {
-  background: var(--card);
-  border-radius: 16px;
-  padding: 16px;
-  position: relative;
-  border: 1px solid var(--border);
-  transition: transform .2s ease, box-shadow .2s ease;
-}
-
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 25px rgba(0,0,0,.35);
-}
-
-.card a.title {
-  font-weight: 600;
-  color: var(--accent);
-  text-decoration: none;
-  word-break: break-all;
-}
-
-.desc {
-  margin-top: 6px;
-  font-size: 14px;
-  color: var(--muted);
-}
-
-.star {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  font-size: 18px;
-  cursor: pointer;
-  color: var(--muted);
-}
-
-.star.active {
-  color: gold;
-}
-
-.category {
-  margin-top: 10px;
-  font-size: 12px;
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(77,171,247,.15);
-  color: var(--accent);
-}
-
-footer {
-  text-align: center;
-  margin-top: 40px;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-@media (max-width: 700px) {
-  .controls {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
-</head>
-
-<body>
-
-<button id="themeToggle">🌙</button>
-
-<h1>🧠 Useful Tools Hub</h1>
-
-<div class="controls">
-  <input id="search" placeholder="Search tools..." autocomplete="off">
-  <select id="categoryFilter">
-    <option value="all">All Categories</option>
-  </select>
-  <button id="clearFilter">Clear</button>
-</div>
-
-<section>
-  <h3>🕒 Recent</h3>
-  <div id="recentGrid" class="grid"></div>
-</section>
-
-<section>
-  <h3>⭐ Favorites</h3>
-  <div id="favGrid" class="grid"></div>
-</section>
-
-<section>
-  <h3>All Tools</h3>
-  <div id="grid" class="grid"></div>
-</section>
-
-<footer>Credits to <b>Murali K</b></footer>
-
 <script>
 let tools = [];
 let favs = JSON.parse(localStorage.getItem("favs") || "[]");
@@ -204,26 +9,27 @@ const recentGrid = document.getElementById("recentGrid");
 const search = document.getElementById("search");
 const categoryFilter = document.getElementById("categoryFilter");
 
+/* ---------- CATEGORY DETECTION ---------- */
 function detectCategory(text) {
   text = text.toLowerCase();
   const rules = [
-    ["ai","gpt","image","generate"], "AI",
-    ["game","play","arcade"], "Games",
-    ["pdf","doc","file","convert"], "Productivity",
-    ["job","resume","career"], "Jobs",
-    ["learn","course","tutorial"], "Learning",
-    ["security","virus","scan"], "Security",
-    ["design","photo","ui"], "Design",
-    ["video","audio","media"], "Media",
-    ["github","code","dev"], "Development"
+    { k:["ai","gpt","openai","image","generate"], v:"AI" },
+    { k:["game","play","arcade"], v:"Games" },
+    { k:["pdf","doc","file","convert"], v:"Productivity" },
+    { k:["job","resume","career","hire"], v:"Jobs" },
+    { k:["learn","course","tutorial"], v:"Learning" },
+    { k:["security","virus","scan","malware"], v:"Security" },
+    { k:["design","photo","ui"], v:"Design" },
+    { k:["video","audio","media"], v:"Media" },
+    { k:["github","code","dev"], v:"Development" }
   ];
-
-  for (let i = 0; i < rules.length; i += 2) {
-    if (rules[i].some(k => text.includes(k))) return rules[i+1];
+  for (const r of rules) {
+    if (r.k.some(k => text.includes(k))) return r.v;
   }
   return "Other";
 }
 
+/* ---------- SHEET LOADER (DB SAFE) ---------- */
 async function loadSheetData() {
   const url =
     "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
@@ -232,17 +38,32 @@ async function loadSheetData() {
   const text = await res.text();
   const json = JSON.parse(text.substring(47).slice(0, -2));
 
+  /* Normalize headers safely */
+  const headers = {};
+  json.table.cols.forEach((c, i) => {
+    if (c.label) {
+      headers[c.label.trim().toLowerCase()] = i;
+    }
+  });
+
+  if (headers.url === undefined) {
+    console.error("❌ 'url' column not found in sheet");
+    return;
+  }
+
   tools = [];
 
   json.table.rows.forEach(r => {
-    const url = r.c[0]?.v;
-    const desc = r.c[1]?.v || "";
-    if (!url) return;
+    const link = r.c[headers.url]?.v;
+    if (!link) return;
+
+    const desc =
+      headers.desc !== undefined ? r.c[headers.desc]?.v || "" : "";
 
     tools.push({
-      url,
-      desc,
-      cat: detectCategory(url + " " + desc)
+      url: link.trim(),
+      desc: desc,
+      cat: detectCategory(link + " " + desc)
     });
   });
 
@@ -250,6 +71,7 @@ async function loadSheetData() {
   render();
 }
 
+/* ---------- UI ---------- */
 function buildCategories() {
   categoryFilter.innerHTML = `<option value="all">All Categories</option>`;
   [...new Set(tools.map(t => t.cat))].sort().forEach(c => {
@@ -278,7 +100,9 @@ function makeCard(t) {
   };
 
   card.innerHTML = `
-    <a class="title" href="${t.url}" target="_blank">${t.url.replace(/^https?:\/\//,"")}</a>
+    <a class="title" href="${t.url}" target="_blank">
+      ${t.url.replace(/^https?:\/\//,"")}
+    </a>
     <div class="desc">${t.desc}</div>
     <div class="category">${t.cat}</div>
   `;
@@ -302,9 +126,11 @@ function render() {
 
   tools.forEach(t => {
     if (
-      (q && !t.url.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) ||
+      (q && !t.url.toLowerCase().includes(q) &&
+       !t.desc.toLowerCase().includes(q)) ||
       (c !== "all" && t.cat !== c)
     ) return;
+
     grid.appendChild(makeCard(t));
   });
 
@@ -319,24 +145,9 @@ function render() {
   });
 }
 
-document.getElementById("themeToggle").onclick = () => {
-  document.body.classList.toggle("light");
-  document.getElementById("themeToggle").textContent =
-    document.body.classList.contains("light") ? "☀️" : "🌙";
-};
-
-document.getElementById("clearFilter").onclick = () => {
-  search.value = "";
-  categoryFilter.value = "all";
-  render();
-};
-
+/* ---------- EVENTS ---------- */
 search.oninput = render;
 categoryFilter.onchange = render;
 
 loadSheetData();
 </script>
-
-</body>
-</html>
-
