@@ -1,153 +1,218 @@
-<script>
-let tools = [];
-let favs = JSON.parse(localStorage.getItem("favs") || "[]");
-let recents = JSON.parse(localStorage.getItem("recents") || "[]");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ToolHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-const grid = document.getElementById("grid");
-const favGrid = document.getElementById("favGrid");
-const recentGrid = document.getElementById("recentGrid");
-const search = document.getElementById("search");
-const categoryFilter = document.getElementById("categoryFilter");
+<style>
+:root{
+  --bg:#0f0f0f;--card:#1b1b1b;--text:#fff;
+  --muted:#aaa;--accent:#4dabf7;
+}
+.light{
+  --bg:#f2f4f7;--card:#fff;--text:#111;
+  --muted:#555;--accent:#2563eb;
+}
+body{
+  margin:0;padding:70px 20px;font-family:Arial;
+  background:var(--bg);color:var(--text);
+}
+#themeToggle{
+  position:fixed;top:14px;right:14px;
+  width:48px;height:48px;border-radius:50%;
+  border:none;font-size:22px;
+  background:var(--card);color:var(--text);
+  cursor:pointer;
+}
+h1{text-align:center}
 
-/* ---------- CATEGORY DETECTION ---------- */
-function detectCategory(text) {
-  text = text.toLowerCase();
-  const rules = [
-    { k:["ai","gpt","openai","image","generate"], v:"AI" },
-    { k:["game","play","arcade"], v:"Games" },
-    { k:["pdf","doc","file","convert"], v:"Productivity" },
-    { k:["job","resume","career","hire"], v:"Jobs" },
-    { k:["learn","course","tutorial"], v:"Learning" },
-    { k:["security","virus","scan","malware"], v:"Security" },
-    { k:["design","photo","ui"], v:"Design" },
-    { k:["video","audio","media"], v:"Media" },
-    { k:["github","code","dev"], v:"Development" }
-  ];
-  for (const r of rules) {
-    if (r.k.some(k => text.includes(k))) return r.v;
-  }
-  return "Other";
+.controls{
+  display:flex;gap:10px;justify-content:center;
+  flex-wrap:wrap;margin-bottom:12px;
+}
+input,select,button{
+  padding:10px;border-radius:8px;border:none;
+}
+button{background:#444;color:#fff;cursor:pointer}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:16px;
 }
 
-/* ---------- SHEET LOADER (DB SAFE) ---------- */
-async function loadSheetData() {
-  const url =
-    "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
+.card{
+  background:var(--card);
+  padding:16px;border-radius:14px;
+  position:relative;
+}
 
-  const res = await fetch(url);
-  const text = await res.text();
-  const json = JSON.parse(text.substring(47).slice(0, -2));
+.card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 10px 24px rgba(0,0,0,.4);
+}
 
-  /* Normalize headers safely */
-  const headers = {};
-  json.table.cols.forEach((c, i) => {
-    if (c.label) {
-      headers[c.label.trim().toLowerCase()] = i;
-    }
+.title{
+  display:flex;align-items:center;gap:10px;
+  font-weight:bold;color:var(--accent);
+  text-decoration:none;
+}
+
+.title img{width:22px;height:22px}
+
+.desc{font-size:14px;color:var(--muted)}
+
+.badge{
+  display:inline-block;margin-top:6px;
+  padding:4px 10px;border-radius:999px;
+  font-size:11px;background:#2a2a2a;color:#9dd1ff;
+}
+
+.status{
+  position:absolute;bottom:12px;right:12px;
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:bold;
+}
+.dot{
+  width:8px;height:8px;border-radius:50%;
+}
+.working{background:#22c55e}
+.redirect{background:#facc15}
+.broken{background:#ef4444}
+
+.tooltip{
+  position:absolute;bottom:42px;right:10px;
+  background:#111;color:#fff;
+  padding:6px 10px;border-radius:6px;
+  font-size:11px;opacity:0;pointer-events:none;
+}
+.card:hover .tooltip{opacity:1}
+
+footer{text-align:center;margin-top:40px;opacity:.7}
+</style>
+</head>
+
+<body>
+
+<button id="themeToggle">🌙</button>
+<h1>🧠 ToolHub</h1>
+
+<div class="controls">
+  <input id="search" placeholder="Search tools…">
+  <select id="categoryFilter">
+    <option value="all">All Categories</option>
+  </select>
+  <button id="clearBtn">Clear</button>
+  <button id="refreshBtn">Refresh</button>
+</div>
+
+<div id="lastUpdated" style="text-align:center;font-size:12px;opacity:.7"></div>
+<div id="grid" class="grid"></div>
+
+<footer>Powered by Google Sheets</footer>
+
+<script>
+const SHEET_URL =
+"https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
+
+const grid = document.getElementById("grid");
+const search = document.getElementById("search");
+const categoryFilter = document.getElementById("categoryFilter");
+let data=[];
+
+// theme memory
+if(localStorage.getItem("theme")==="light")document.body.classList.add("light");
+themeToggle.onclick=()=>{
+  document.body.classList.toggle("light");
+  localStorage.setItem("theme",
+    document.body.classList.contains("light")?"light":"dark");
+};
+
+// helpers
+const hostname = url => new URL(url).hostname.replace("www.","");
+const titleFromUrl = url =>
+  hostname(url).split(".")[0].replace(/^\w/,c=>c.toUpperCase());
+
+async function loadData(){
+  const res = await fetch(SHEET_URL);
+  const txt = await res.text();
+  const json = JSON.parse(txt.substring(47).slice(0,-2));
+
+  const cols = json.table.cols.map(c=>c.label.toLowerCase());
+  const i={
+    url:cols.indexOf("url"),
+    cat:cols.indexOf("category"),
+    desc:cols.indexOf("description"),
+    code:cols.indexOf("http_status"),
+    label:cols.indexOf("status_label")
+  };
+
+  data = json.table.rows.map(r=>({
+    url:r.c[i.url]?.v,
+    cat:r.c[i.cat]?.v,
+    desc:r.c[i.desc]?.v,
+    code:r.c[i.code]?.v,
+    label:r.c[i.label]?.v
+  }));
+
+  // fill category filter
+  categoryFilter.innerHTML='<option value="all">All Categories</option>';
+  [...new Set(data.map(d=>d.cat).filter(Boolean))].forEach(c=>{
+    const o=document.createElement("option");
+    o.value=o.textContent=c;
+    categoryFilter.appendChild(o);
   });
 
-  if (headers.url === undefined) {
-    console.error("❌ 'url' column not found in sheet");
-    return;
-  }
+  document.getElementById("lastUpdated").innerText =
+    "Last updated: "+new Date().toLocaleString();
 
-  tools = [];
-
-  json.table.rows.forEach(r => {
-    const link = r.c[headers.url]?.v;
-    if (!link) return;
-
-    const desc =
-      headers.desc !== undefined ? r.c[headers.desc]?.v || "" : "";
-
-    tools.push({
-      url: link.trim(),
-      desc: desc,
-      cat: detectCategory(link + " " + desc)
-    });
-  });
-
-  buildCategories();
   render();
 }
 
-/* ---------- UI ---------- */
-function buildCategories() {
-  categoryFilter.innerHTML = `<option value="all">All Categories</option>`;
-  [...new Set(tools.map(t => t.cat))].sort().forEach(c => {
-    const o = document.createElement("option");
-    o.value = c;
-    o.textContent = c;
-    categoryFilter.appendChild(o);
+function render(){
+  grid.innerHTML="";
+  const q=search.value.toLowerCase();
+  const c=categoryFilter.value;
+
+  data.forEach(t=>{
+    if(!t.url) return;
+    if(q && !t.url.toLowerCase().includes(q)
+       && !t.desc?.toLowerCase().includes(q)) return;
+    if(c!=="all" && t.cat!==c) return;
+
+    let dot="broken";
+    if(t.code===200) dot="working";
+    else if(t.code>=300 && t.code<400) dot="redirect";
+
+    const card=document.createElement("div");
+    card.className="card";
+    card.innerHTML=`
+      <a class="title" href="${t.url}" target="_blank">
+        <img src="https://www.google.com/s2/favicons?sz=64&domain=${hostname(t.url)}">
+        ${titleFromUrl(t.url)}
+      </a>
+      <div class="desc">${t.desc||""}</div>
+      <div class="badge">${t.cat||"Other"}</div>
+      <div class="status">
+        <span class="dot ${dot}"></span>${t.label||""}
+      </div>
+      <div class="tooltip">
+        URL: ${t.url}<br>Status: ${t.code}
+      </div>
+    `;
+    grid.appendChild(card);
   });
 }
 
-function makeCard(t) {
-  const card = document.createElement("div");
-  card.className = "card";
+search.oninput=render;
+categoryFilter.onchange=render;
+clearBtn.onclick=()=>{search.value="";categoryFilter.value="all";render();}
+refreshBtn.onclick=loadData;
 
-  const star = document.createElement("div");
-  star.className = "star" + (favs.includes(t.url) ? " active" : "");
-  star.textContent = "★";
-
-  star.onclick = e => {
-    e.stopPropagation();
-    favs.includes(t.url)
-      ? favs = favs.filter(x => x !== t.url)
-      : favs.push(t.url);
-    localStorage.setItem("favs", JSON.stringify(favs));
-    render();
-  };
-
-  card.innerHTML = `
-    <a class="title" href="${t.url}" target="_blank">
-      ${t.url.replace(/^https?:\/\//,"")}
-    </a>
-    <div class="desc">${t.desc}</div>
-    <div class="category">${t.cat}</div>
-  `;
-
-  card.appendChild(star);
-
-  card.onclick = () => {
-    recents = [t.url, ...recents.filter(x => x !== t.url)].slice(0,5);
-    localStorage.setItem("recents", JSON.stringify(recents));
-    render();
-  };
-
-  return card;
-}
-
-function render() {
-  grid.innerHTML = favGrid.innerHTML = recentGrid.innerHTML = "";
-
-  const q = search.value.toLowerCase();
-  const c = categoryFilter.value;
-
-  tools.forEach(t => {
-    if (
-      (q && !t.url.toLowerCase().includes(q) &&
-       !t.desc.toLowerCase().includes(q)) ||
-      (c !== "all" && t.cat !== c)
-    ) return;
-
-    grid.appendChild(makeCard(t));
-  });
-
-  favs.forEach(f => {
-    const t = tools.find(x => x.url === f);
-    if (t) favGrid.appendChild(makeCard(t));
-  });
-
-  recents.forEach(r => {
-    const t = tools.find(x => x.url === r);
-    if (t) recentGrid.appendChild(makeCard(t));
-  });
-}
-
-/* ---------- EVENTS ---------- */
-search.oninput = render;
-categoryFilter.onchange = render;
-
-loadSheetData();
+loadData();
 </script>
+
+</body>
+</html>
+
