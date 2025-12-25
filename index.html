@@ -42,10 +42,6 @@ body {
   font-size:22px;
   background:var(--card);
   color:var(--text);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:999;
 }
 
 h1 { text-align:center; }
@@ -62,12 +58,6 @@ input, select, button {
   padding:10px;
   border-radius:8px;
   border:none;
-}
-
-#clearFilter {
-  background:#444;
-  color:white;
-  cursor:pointer;
 }
 
 .grid {
@@ -89,26 +79,17 @@ input, select, button {
   box-shadow:0 12px 30px rgba(0,0,0,.45);
 }
 
-.icon img { width:36px; }
-
-.title {
-  color:var(--accent);
-  font-weight:bold;
-  text-decoration:none;
-}
-
-.desc {
-  font-size:14px;
-  color:var(--muted);
-}
+.title { color:var(--accent); font-weight:bold; text-decoration:none; }
+.desc { font-size:14px; color:var(--muted); }
 
 .star {
   position:absolute;
   top:10px;
   right:10px;
-  font-size:20px;
   cursor:pointer;
+  font-size:20px;
 }
+
 .star.active { color:gold; }
 
 .status {
@@ -119,7 +100,6 @@ input, select, button {
   align-items:center;
   gap:6px;
   font-size:11px;
-  font-weight:bold;
 }
 
 .status-dot {
@@ -149,10 +129,8 @@ footer {
 <h1>🧠 Useful Tools Hub</h1>
 
 <div class="controls">
-  <input id="search" placeholder="Search tools..." autocomplete="off">
-  <select id="categoryFilter">
-    <option value="all">All Categories</option>
-  </select>
+  <input id="search" placeholder="Search tools...">
+  <select id="categoryFilter"><option value="all">All</option></select>
   <button id="clearFilter">Clear</button>
 </div>
 
@@ -165,56 +143,13 @@ footer {
 <h3>All Tools</h3>
 <div id="grid" class="grid"></div>
 
-<footer>Credits to <b>Murali K</b>. All rights reserved.</footer>
+<footer>Credits to <b>Murali K</b></footer>
 
 <script>
 const tools = [
-  {url:"https://letsenhance.io/",desc:"AI image enhancer",cat:"AI"},
-  {url:"https://toffeeshare.com/",desc:"File sharing",cat:"Utility"},
-  {url:"https://poki.com/",desc:"Online games",cat:"Games"},
-  {url:"https://app.invoicesimple.com/login#accountRequired",desc:"Invoice creator",cat:"Productivity"},
-  {url:"https://vocalremover.org/",desc:"Remove vocals",cat:"AI"},
-  {url:"https://z-lib.org/",desc:"Ebook library",cat:"Learning"},
-  {url:"https://digitaldefynd.com/",desc:"Learning platform",cat:"Learning"},
-  {url:"https://downdetector.in/",desc:"Outage monitor",cat:"Security"},
-  {url:"https://www.hacksplaining.com/",desc:"Cybersecurity learning",cat:"Learning"},
-  {url:"https://stumbled.to/",desc:"Discover websites",cat:"Discovery"},
-  {url:"https://www.discuvver.com/",desc:"Random websites",cat:"Discovery"},
-  {url:"https://allgamesatoz.com/",desc:"PC games",cat:"Games"},
-  {url:"https://myinterviewpractice.com/industries/",desc:"Interview prep",cat:"Jobs"},
-  {url:"https://osintframework.com/",desc:"OSINT tools",cat:"Security"},
-  {url:"http://driving-tests.in/",desc:"Driving test prep",cat:"Learning"},
-  {url:"https://app.diagrams.net/",desc:"Flowcharts",cat:"Productivity"},
-  {url:"https://speedtest.net.in/",desc:"Internet speed test",cat:"Utility"},
-  {url:"https://123apps.com/",desc:"Media tools",cat:"Productivity"},
-  {url:"https://archive.org/details/internetarcade",desc:"Retro games",cat:"Games"},
-  {url:"https://pfpmaker.com/",desc:"Profile photo maker",cat:"Design"},
-  {url:"https://genial.ly/",desc:"Interactive content",cat:"Design"},
-  {url:"https://www.careerswave.in/",desc:"Free newspapers",cat:"Learning"},
-  {url:"https://lumpysoft.com/",desc:"Free downloads",cat:"Utility"},
-  {url:"https://www.classcentral.com/",desc:"Online courses",cat:"Learning"},
-  {url:"https://flowcv.io/",desc:"Resume builder",cat:"Jobs"},
-  {url:"https://www.magiceraser.io/",desc:"Remove objects",cat:"AI"},
-  {url:"https://cultivatedculture.com/resume-scanner/",desc:"Resume scanner",cat:"Jobs"},
-  {url:"https://tinywow.com/",desc:"File utilities",cat:"Productivity"},
-  {url:"https://quillbot.com/",desc:"Text rewriting",cat:"AI"},
-  {url:"https://freelearninglist.org/",desc:"Free learning",cat:"Learning"},
-  {url:"https://www.sejda.com/pdf-editor",desc:"PDF editor",cat:"Productivity"},
-  {url:"https://virusscan.jotti.org/",desc:"Virus scanner",cat:"Security"},
-  {url:"https://www.virustotal.com/gui/",desc:"Malware scanner",cat:"Security"},
-  {url:"https://easypdf.com/ocr-online",desc:"OCR tool",cat:"Productivity"},
-  {url:"https://palette.fm/",desc:"AI colorizer",cat:"AI"},
-  {url:"https://www.colossyan.com/",desc:"AI video creator",cat:"AI"},
-  {url:"https://www.upscale.media/",desc:"Image upscaler",cat:"AI"},
-  {url:"https://openai.com/",desc:"AI platform",cat:"AI"},
-  {url:"https://www.myheritage.com/",desc:"Photo animation",cat:"AI"},
-  {url:"https://weworkremotely.com/",desc:"Remote jobs",cat:"Jobs"},
-  {url:"https://www.kickresume.com/en/",desc:"Resume builder",cat:"Jobs"},
-  {url:"https://triplebyte.com/company",desc:"Hiring platform",cat:"Jobs"},
-  {url:"https://cursa.app/en",desc:"Free certificates",cat:"Learning"},
-  {url:"https://www.levels.fyi/",desc:"Salary insights",cat:"Jobs"},
-  {url:"https://rytr.me/",desc:"AI writing",cat:"AI"},
-  {url:"https://dos.zone/",desc:"Vintage games",cat:"Games"}
+  {url:"https://openai.com",desc:"AI Platform",cat:"AI"},
+  {url:"https://www.google.com",desc:"Search Engine",cat:"Utility"},
+  {url:"https://github.com",desc:"Code Hosting",cat:"Development"}
 ];
 
 let favs = JSON.parse(localStorage.getItem("favs") || "[]");
@@ -224,8 +159,6 @@ let statusMap = {};
 const grid = document.getElementById("grid");
 const favGrid = document.getElementById("favGrid");
 const recentGrid = document.getElementById("recentGrid");
-const search = document.getElementById("search");
-const categoryFilter = document.getElementById("categoryFilter");
 
 [...new Set(tools.map(t => t.cat))].forEach(c => {
   const o = document.createElement("option");
@@ -235,24 +168,28 @@ const categoryFilter = document.getElementById("categoryFilter");
 });
 
 async function loadStatusData() {
-  const url = "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
-  const res = await fetch(url);
-  const text = await res.text();
-  const json = JSON.parse(text.substring(47).slice(0, -2));
-  const rows = json.table.rows;
+  try {
+    const url = "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
+    const res = await fetch(url);
+    const text = await res.text();
+    const json = JSON.parse(text.substring(47).slice(0, -2));
 
-  const cols = json.table.cols.map(c => c.label.toLowerCase());
-  const urlIndex = cols.indexOf("url");
-  const statusIndex = cols.indexOf("status");
+    const cols = json.table.cols.map(c => c.label.toLowerCase());
+    const urlIndex = cols.indexOf("url");
+    const statusIndex = cols.indexOf("status");
 
-  rows.forEach(r => {
-    const link = r.c[urlIndex]?.v;
-    const status = r.c[statusIndex]?.v;
-    if (link) statusMap[link] = String(status || "").toLowerCase();
-  });
+    json.table.rows.forEach(r => {
+      const link = r.c[urlIndex]?.v;
+      const status = r.c[statusIndex]?.v;
+      if (link) statusMap[link] = String(status).toLowerCase();
+    });
+
+  } catch (e) {
+    console.error("Sheet load failed", e);
+  }
 }
 
-function makeCard(t){
+function makeCard(t) {
   const card = document.createElement("div");
   card.className = "card";
 
@@ -262,33 +199,23 @@ function makeCard(t){
 
   star.onclick = e => {
     e.stopPropagation();
-    favs.includes(t.url) ? favs = favs.filter(x => x !== t.url) : favs.push(t.url);
+    favs.includes(t.url)
+      ? favs = favs.filter(x => x !== t.url)
+      : favs.push(t.url);
     localStorage.setItem("favs", JSON.stringify(favs));
     render();
   };
 
   card.innerHTML = `
-    <div class="icon">
-      <img src="https://www.google.com/s2/favicons?sz=64&domain=${new URL(t.url).hostname}">
-    </div>
-    <a class="title" href="${t.url}" target="_blank">${new URL(t.url).hostname.replace("www.","")}</a>
+    <a class="title" href="${t.url}" target="_blank">${t.url.replace("https://","")}</a>
     <div class="desc">${t.desc}</div>
   `;
 
-  let raw = statusMap[t.url] || "";
-  let cls = "unknown";
-  let label = "Unknown";
-
-  if (raw.includes("working")) { cls="working"; label="Working"; }
-  else if (raw.includes("redirect")) { cls="redirect"; label="Redirect"; }
-  else if (raw.includes("blocked")) { cls="blocked"; label="Blocked"; }
-  else if (raw.includes("broken")) { cls="broken"; label="Broken"; }
-
-  const status = document.createElement("div");
-  status.className = "status " + cls;
-  status.innerHTML = `<span class="status-dot"></span>${label}`;
-  card.appendChild(status);
-
+  let status = statusMap[t.url] || "unknown";
+  const s = document.createElement("div");
+  s.className = "status " + status;
+  s.innerHTML = `<span class="status-dot"></span>${status}`;
+  card.appendChild(s);
   card.appendChild(star);
 
   card.onclick = () => {
@@ -301,36 +228,29 @@ function makeCard(t){
 }
 
 function render() {
-  grid.innerHTML = "";
-  favGrid.innerHTML = "";
-  recentGrid.innerHTML = "";
-
+  grid.innerHTML = favGrid.innerHTML = recentGrid.innerHTML = "";
   const q = search.value.toLowerCase();
   const c = categoryFilter.value;
 
   tools.forEach(t => {
-    if (
-      (q && !t.desc.toLowerCase().includes(q) && !t.url.toLowerCase().includes(q)) ||
-      (c !== "all" && t.cat !== c)
-    ) return;
+    if ((q && !t.url.includes(q) && !t.desc.toLowerCase().includes(q)) ||
+        (c !== "all" && t.cat !== c)) return;
     grid.appendChild(makeCard(t));
   });
 
   favs.forEach(f => {
     const t = tools.find(x => x.url === f);
-    if (t && (c === "all" || t.cat === c)) favGrid.appendChild(makeCard(t));
+    if (t) favGrid.appendChild(makeCard(t));
   });
 
   recents.forEach(r => {
     const t = tools.find(x => x.url === r);
-    if (t && (c === "all" || t.cat === c)) recentGrid.appendChild(makeCard(t));
+    if (t) recentGrid.appendChild(makeCard(t));
   });
 }
 
 document.getElementById("themeToggle").onclick = () => {
   document.body.classList.toggle("light");
-  document.getElementById("themeToggle").textContent =
-    document.body.classList.contains("light") ? "☀️" : "🌙";
 };
 
 document.getElementById("clearFilter").onclick = () => {
@@ -339,11 +259,12 @@ document.getElementById("clearFilter").onclick = () => {
   render();
 };
 
-search.addEventListener("input", render);
-categoryFilter.addEventListener("change", render);
+search.oninput = render;
+categoryFilter.onchange = render;
 
 loadStatusData().then(render);
 </script>
 
 </body>
 </html>
+
