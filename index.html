@@ -7,34 +7,54 @@
 
 <style>
 :root{
-  --bg:#0f0f0f;--card:#1b1b1b;--text:#fff;
-  --muted:#aaa;--accent:#4dabf7;
+  --bg:#0f0f0f;
+  --card:#1b1b1b;
+  --text:#ffffff;
+  --muted:#aaa;
+  --accent:#4dabf7;
 }
 .light{
-  --bg:#f2f4f7;--card:#fff;--text:#111;
-  --muted:#555;--accent:#2563eb;
+  --bg:#f2f4f7;
+  --card:#ffffff;
+  --text:#111;
+  --muted:#555;
+  --accent:#2563eb;
 }
 body{
-  margin:0;padding:70px 20px;font-family:Arial;
-  background:var(--bg);color:var(--text);
+  margin:0;
+  padding:70px 20px;
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
 }
 #themeToggle{
-  position:fixed;top:14px;right:14px;
-  width:48px;height:48px;border-radius:50%;
-  border:none;font-size:22px;
-  background:var(--card);color:var(--text);
+  position:fixed;
+  top:14px;
+  right:14px;
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  border:none;
+  font-size:22px;
   cursor:pointer;
+  background:var(--card);
+  color:var(--text);
 }
-h1{text-align:center}
+h1{text-align:center;}
 
 .controls{
-  display:flex;gap:10px;justify-content:center;
-  flex-wrap:wrap;margin-bottom:12px;
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-bottom:12px;
 }
 input,select,button{
-  padding:10px;border-radius:8px;border:none;
+  padding:10px;
+  border-radius:8px;
+  border:none;
 }
-button{background:#444;color:#fff;cursor:pointer}
+button{background:#444;color:#fff;cursor:pointer;}
 
 .grid{
   display:grid;
@@ -44,52 +64,82 @@ button{background:#444;color:#fff;cursor:pointer}
 
 .card{
   background:var(--card);
-  padding:16px;border-radius:14px;
+  padding:16px;
+  border-radius:14px;
   position:relative;
 }
-
 .card:hover{
   transform:translateY(-4px);
   box-shadow:0 10px 24px rgba(0,0,0,.4);
 }
 
 .title{
-  display:flex;align-items:center;gap:10px;
-  font-weight:bold;color:var(--accent);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:bold;
+  color:var(--accent);
   text-decoration:none;
 }
+.title img{
+  width:22px;
+  height:22px;
+  border-radius:4px;
+}
 
-.title img{width:22px;height:22px}
-
-.desc{font-size:14px;color:var(--muted)}
+.desc{
+  font-size:14px;
+  color:var(--muted);
+}
 
 .badge{
-  display:inline-block;margin-top:6px;
-  padding:4px 10px;border-radius:999px;
-  font-size:11px;background:#2a2a2a;color:#9dd1ff;
+  display:inline-block;
+  margin-top:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:11px;
+  background:#2a2a2a;
+  color:#9dd1ff;
 }
 
 .status{
-  position:absolute;bottom:12px;right:12px;
-  display:flex;align-items:center;gap:6px;
-  font-size:12px;font-weight:bold;
+  position:absolute;
+  bottom:12px;
+  right:12px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  font-weight:bold;
 }
 .dot{
-  width:8px;height:8px;border-radius:50%;
+  width:8px;
+  height:8px;
+  border-radius:50%;
 }
-.working{background:#22c55e}
-.redirect{background:#facc15}
-.broken{background:#ef4444}
+.working{background:#22c55e;}
+.redirect{background:#facc15;}
+.broken{background:#ef4444;}
 
 .tooltip{
-  position:absolute;bottom:42px;right:10px;
-  background:#111;color:#fff;
-  padding:6px 10px;border-radius:6px;
-  font-size:11px;opacity:0;pointer-events:none;
+  position:absolute;
+  bottom:42px;
+  right:10px;
+  background:#111;
+  color:#fff;
+  padding:6px 10px;
+  border-radius:6px;
+  font-size:11px;
+  opacity:0;
+  pointer-events:none;
 }
-.card:hover .tooltip{opacity:1}
+.card:hover .tooltip{opacity:1;}
 
-footer{text-align:center;margin-top:40px;opacity:.7}
+footer{
+  text-align:center;
+  margin-top:40px;
+  opacity:.7;
+}
 </style>
 </head>
 
@@ -116,30 +166,37 @@ footer{text-align:center;margin-top:40px;opacity:.7}
 const SHEET_URL =
 "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
 
-const grid = document.getElementById("grid");
-const search = document.getElementById("search");
-const categoryFilter = document.getElementById("categoryFilter");
+const grid=document.getElementById("grid");
+const search=document.getElementById("search");
+const categoryFilter=document.getElementById("categoryFilter");
 let data=[];
 
-// theme memory
-if(localStorage.getItem("theme")==="light")document.body.classList.add("light");
+/* Theme memory */
+if(localStorage.getItem("theme")==="light")
+  document.body.classList.add("light");
+
 themeToggle.onclick=()=>{
   document.body.classList.toggle("light");
-  localStorage.setItem("theme",
-    document.body.classList.contains("light")?"light":"dark");
+  localStorage.setItem(
+    "theme",
+    document.body.classList.contains("light")?"light":"dark"
+  );
 };
 
-// helpers
-const hostname = url => new URL(url).hostname.replace("www.","");
-const titleFromUrl = url =>
-  hostname(url).split(".")[0].replace(/^\w/,c=>c.toUpperCase());
+/* Helpers */
+const hostname=url=>new URL(url).hostname.replace("www.","");
+const titleFromUrl=url=>{
+  const h=hostname(url).split(".")[0];
+  return h.charAt(0).toUpperCase()+h.slice(1);
+};
 
+/* Load Google Sheet */
 async function loadData(){
-  const res = await fetch(SHEET_URL);
-  const txt = await res.text();
-  const json = JSON.parse(txt.substring(47).slice(0,-2));
+  const res=await fetch(SHEET_URL);
+  const txt=await res.text();
+  const json=JSON.parse(txt.substring(47).slice(0,-2));
 
-  const cols = json.table.cols.map(c=>c.label.toLowerCase());
+  const cols=json.table.cols.map(c=>c.label.toLowerCase());
   const i={
     url:cols.indexOf("url"),
     cat:cols.indexOf("category"),
@@ -148,15 +205,14 @@ async function loadData(){
     label:cols.indexOf("status_label")
   };
 
-  data = json.table.rows.map(r=>({
+  data=json.table.rows.map(r=>({
     url:r.c[i.url]?.v,
     cat:r.c[i.cat]?.v,
     desc:r.c[i.desc]?.v,
     code:r.c[i.code]?.v,
     label:r.c[i.label]?.v
-  }));
+  })).filter(d=>d.url);
 
-  // fill category filter
   categoryFilter.innerHTML='<option value="all">All Categories</option>';
   [...new Set(data.map(d=>d.cat).filter(Boolean))].forEach(c=>{
     const o=document.createElement("option");
@@ -164,19 +220,19 @@ async function loadData(){
     categoryFilter.appendChild(o);
   });
 
-  document.getElementById("lastUpdated").innerText =
+  document.getElementById("lastUpdated").innerText=
     "Last updated: "+new Date().toLocaleString();
 
   render();
 }
 
+/* Render cards */
 function render(){
   grid.innerHTML="";
   const q=search.value.toLowerCase();
   const c=categoryFilter.value;
 
   data.forEach(t=>{
-    if(!t.url) return;
     if(q && !t.url.toLowerCase().includes(q)
        && !t.desc?.toLowerCase().includes(q)) return;
     if(c!=="all" && t.cat!==c) return;
@@ -205,9 +261,14 @@ function render(){
   });
 }
 
+/* Controls */
 search.oninput=render;
 categoryFilter.onchange=render;
-clearBtn.onclick=()=>{search.value="";categoryFilter.value="all";render();}
+clearBtn.onclick=()=>{
+  search.value="";
+  categoryFilter.value="all";
+  render();
+};
 refreshBtn.onclick=loadData;
 
 loadData();
@@ -215,4 +276,3 @@ loadData();
 
 </body>
 </html>
-
