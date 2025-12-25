@@ -68,6 +68,7 @@ button { background:#444; color:white; cursor:pointer; }
   border-radius:14px;
   position:relative;
 }
+
 .card:hover {
   transform:translateY(-4px);
   box-shadow:0 8px 20px rgba(0,0,0,.4);
@@ -78,8 +79,8 @@ button { background:#444; color:white; cursor:pointer; }
   font-weight:bold;
   text-decoration:none;
   display:flex;
-  align-items:center;
   gap:8px;
+  align-items:center;
 }
 
 .title img {
@@ -127,9 +128,16 @@ button { background:#444; color:white; cursor:pointer; }
   pointer-events:none;
   transition:.2s;
 }
-.card:hover .tooltip { opacity:1; }
 
-footer { text-align:center; margin-top:40px; opacity:.7; }
+.card:hover .tooltip {
+  opacity:1;
+}
+
+footer {
+  text-align:center;
+  margin-top:40px;
+  opacity:.7;
+}
 </style>
 </head>
 
@@ -155,7 +163,7 @@ footer { text-align:center; margin-top:40px; opacity:.7; }
 
 <script>
 const SHEET_URL =
-"https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/edit?gid=1452664636#gid=1452664636&tqx=out:json";
+  "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/edit?gid=1452664636#gid=1452664636&tqx=out:json";
 
 const grid = document.getElementById("grid");
 const search = document.getElementById("search");
@@ -172,11 +180,11 @@ document.getElementById("themeToggle").onclick = () => {
   localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
 };
 
-// Load data
+// Fetch data
 async function loadData() {
   const res = await fetch(SHEET_URL);
   const txt = await res.text();
-  const json = JSON.parse(txt.substring(47).slice(0,-2));
+  const json = JSON.parse(txt.substring(47).slice(0, -2));
 
   const cols = json.table.cols.map(c => c.label.toLowerCase());
   const idx = {
@@ -209,8 +217,7 @@ function render() {
   const c = categoryFilter.value;
 
   data.forEach(t => {
-    if ((q && !t.name.toLowerCase().includes(q)) ||
-        (c !== "all" && t.cat !== c)) return;
+    if ((q && !t.name.toLowerCase().includes(q)) || (c !== "all" && t.cat !== c)) return;
 
     let cls = "broken";
     if (t.code === 200) cls = "working";
