@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Useful Tools Hub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+:root {
+  --bg:#0f0f0f;
+  --card:#1b1b1b;
+  --text:#ffffff;
+  --muted:#aaa;
+  --accent:#4dabf7;
+}
+
+/* Light Mode */
+.light {
+  --bg:#f2f4f7;
+  --card:#ffffff;
+  --text:#111;
+  --muted:#555;
+  --accent:#2563eb;
+}
+
+body {
+  margin:0;
+  padding:20px;
+  font-family:Arial, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  transition:background .3s,color .3s;
+}
+
+h1 { text-align:center; }
+
+#themeToggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 22px;
+  background: var(--card);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,.35);
+  transition: all 0.25s ease;
+  line-height: 1;
+  padding: 0;
+}
+#themeToggle:hover {
+  transform: scale(1.1);
+}
+
+.controls {
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  margin-bottom:20px;
+}
+
+input, select {
+  padding:10px;
+  border-radius:8px;
+  border:none;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:16px;
+}
+
+.card {
+  background:var(--card);
+  padding:16px;
+  border-radius:14px;
+  position:relative;
+  transition:.25s;
+  animation:fadeIn .35s ease;
+}
+
+.card:hover {
+  transform:translateY(-6px);
+  box-shadow:0 12px 30px rgba(0,0,0,.45);
+}
+
+@keyframes fadeIn {
+  from {opacity:0; transform:translateY(10px);}
+  to {opacity:1; transform:translateY(0);}
+}
+
+.icon img { width:36px; }
+
+.title {
+  color:var(--accent);
+  font-weight:bold;
+  text-decoration:none;
+}
+
+.desc {
+  font-size:14px;
+  color:var(--muted);
+}
+
+.star {
+  position:absolute;
+  top:10px;
+  right:10px;
+  font-size:20px;
+  cursor:pointer;
+  transition:.2s;
+}
+.star:hover { transform:scale(1.4) rotate(10deg); }
+.star.active { color:gold; }
+
+footer {
+  margin-top:40px;
+  text-align:center;
+  opacity:.7;
+}
+</style>
+</head>
+
+<body>
+
+<button id="themeToggle">🌙</button>
+
+<h1>🧠 Useful Tools Hub</h1>
+
+<div class="controls">
+  <input id="search" placeholder="Search tools...">
+  <select id="categoryFilter">
+    <option value="all">All Categories</option>
+  </select>
+</div>
+
+<h3>🕒 Recent</h3>
+<div id="recentGrid" class="grid"></div>
+
+<h3>⭐ Favorites</h3>
+<div id="favGrid" class="grid"></div>
+
+<h3>All Tools</h3>
+<div id="grid" class="grid"></div>
+
+<footer>
+  Credits to <b>Murali K</b>. All rights reserved.
+</footer>
+
+<script>
+const tools = [
+  {url:"https://letsenhance.io/",desc:"AI image enhancer",cat:"AI"},
+  {url:"https://toffeeshare.com/",desc:"File sharing",cat:"Utility"},
+  {url:"https://poki.com/",desc:"Online games",cat:"Games"},
+  {url:"https://app.invoicesimple.com/login#accountRequired",desc:"Invoice creator",cat:"Productivity"},
+  {url:"https://vocalremover.org/",desc:"Remove vocals",cat:"AI"},
+  {url:"https://z-lib.org/",desc:"Ebook library",cat:"Learning"},
+  {url:"https://digitaldefynd.com/",desc:"Learning platform",cat:"Learning"},
+  {url:"https://downdetector.in/",desc:"Outage monitor",cat:"Security"},
+  {url:"https://www.hacksplaining.com/",desc:"Cybersecurity learning",cat:"Learning"},
+  {url:"https://stumbled.to/",desc:"Discover websites",cat:"Discovery"},
+  {url:"https://www.discuvver.com/",desc:"Random websites",cat:"Discovery"},
+  {url:"https://allgamesatoz.com/",desc:"PC games",cat:"Games"},
+  {url:"https://myinterviewpractice.com/industries/",desc:"Interview prep",cat:"Jobs"},
+  {url:"https://osintframework.com/",desc:"OSINT tools",cat:"Security"},
+  {url:"http://driving-tests.in/",desc:"Driving test prep",cat:"Learning"},
+  {url:"https://app.diagrams.net/",desc:"Flowcharts",cat:"Productivity"},
+  {url:"https://speedtest.net.in/",desc:"Internet speed test",cat:"Utility"},
+  {url:"https://123apps.com/",desc:"Media tools",cat:"Productivity"},
+  {url:"https://archive.org/details/internetarcade",desc:"Retro games",cat:"Games"},
+  {url:"https://pfpmaker.com/",desc:"Profile photo maker",cat:"Design"},
+  {url:"https://genial.ly/",desc:"Interactive content",cat:"Design"},
+  {url:"https://www.careerswave.in/",desc:"Free newspapers",cat:"Learning"},
+  {url:"https://lumpysoft.com/",desc:"Free downloads",cat:"Utility"},
+  {url:"https://www.classcentral.com/",desc:"Online courses",cat:"Learning"},
+  {url:"https://flowcv.io/",desc:"Resume builder",cat:"Jobs"},
+  {url:"https://www.magiceraser.io/",desc:"Remove objects",cat:"AI"},
+  {url:"https://cultivatedculture.com/resume-scanner/",desc:"Resume scanner",cat:"Jobs"},
+  {url:"https://tinywow.com/",desc:"File utilities",cat:"Productivity"},
+  {url:"https://quillbot.com/",desc:"Text rewriting",cat:"AI"},
+  {url:"https://freelearninglist.org/",desc:"Free learning",cat:"Learning"},
+  {url:"https://www.sejda.com/pdf-editor",desc:"PDF editor",cat:"Productivity"},
+  {url:"https://virusscan.jotti.org/",desc:"Virus scanner",cat:"Security"},
+  {url:"https://www.virustotal.com/gui/",desc:"Malware scanner",cat:"Security"},
+  {url:"https://easypdf.com/ocr-online",desc:"OCR tool",cat:"Productivity"},
+  {url:"https://palette.fm/",desc:"AI colorizer",cat:"AI"},
+  {url:"https://www.colossyan.com/",desc:"AI video creator",cat:"AI"},
+  {url:"https://www.upscale.media/",desc:"Image upscaler",cat:"AI"},
+  {url:"https://openai.com/",desc:"AI platform",cat:"AI"},
+  {url:"https://www.myheritage.com/",desc:"Photo animation",cat:"AI"},
+  {url:"https://weworkremotely.com/",desc:"Remote jobs",cat:"Jobs"},
+  {url:"https://www.kickresume.com/en/",desc:"Resume builder",cat:"Jobs"},
+  {url:"https://triplebyte.com/company",desc:"Hiring platform",cat:"Jobs"},
+  {url:"https://cursa.app/en",desc:"Free certificates",cat:"Learning"},
+  {url:"https://www.levels.fyi/",desc:"Salary insights",cat:"Jobs"},
+  {url:"https://rytr.me/",desc:"AI writing",cat:"AI"},
+  {url:"https://dos.zone/",desc:"Vintage games",cat:"Games"}
+];
+
+let favs = JSON.parse(localStorage.getItem("favs") || "[]");
+let recents = JSON.parse(localStorage.getItem("recents") || "[]");
+
+const grid = document.getElementById("grid");
+const favGrid = document.getElementById("favGrid");
+const recentGrid = document.getElementById("recentGrid");
+const search = document.getElementById("search");
+const categoryFilter = document.getElementById("categoryFilter");
+
+[...new Set(tools.map(t => t.cat))].forEach(c => {
+  const o = document.createElement("option");
+  o.value = c;
+  o.textContent = c;
+  categoryFilter.appendChild(o);
+});
+
+function makeCard(t){
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const star = document.createElement("div");
+  star.className = "star" + (favs.includes(t.url) ? " active" : "");
+  star.textContent = "★";
+
+  star.onclick = e => {
+    e.stopPropagation();
+    favs.includes(t.url) ? favs = favs.filter(x => x !== t.url) : favs.push(t.url);
+    localStorage.setItem("favs", JSON.stringify(favs));
+    render();
+  };
+
+  card.innerHTML = `
+    <div class="icon">
+      <img src="https://www.google.com/s2/favicons?sz=64&domain=${new URL(t.url).hostname}">
+    </div>
+    <a class="title" href="${t.url}" target="_blank" title="${t.url}">
+      ${new URL(t.url).hostname.replace("www.","")}
+    </a>
+    <div class="desc">${t.desc}</div>
+  `;
+
+  card.appendChild(star);
+
+  card.onclick = () => {
+    recents = [t.url, ...recents.filter(x => x !== t.url)].slice(0,5);
+    localStorage.setItem("recents", JSON.stringify(recents));
+    render();
+  };
+
+  return card;
+}
+
+function render() {
+  grid.innerHTML = "";
+  favGrid.innerHTML = "";
+  recentGrid.innerHTML = "";
+
+  const q = search.value.toLowerCase();
+  const c = categoryFilter.value;
+
+  tools.forEach(t => {
+    if (
+      (q && !t.desc.toLowerCase().includes(q) && !t.url.toLowerCase().includes(q)) ||
+      (c !== "all" && t.cat !== c)
+    ) return;
+    grid.appendChild(makeCard(t));
+  });
+
+  favs.forEach(f => {
+    const t = tools.find(x => x.url === f);
+    if (t && (c === "all" || t.cat === c)) favGrid.appendChild(makeCard(t));
+  });
+
+  recents.forEach(r => {
+    const t = tools.find(x => x.url === r);
+    if (t && (c === "all" || t.cat === c)) recentGrid.appendChild(makeCard(t));
+  });
+}
+
+document.getElementById("themeToggle").onclick = () => {
+  document.body.classList.toggle("light");
+  document.getElementById("themeToggle").textContent =
+    document.body.classList.contains("light") ? "☀️" : "🌙";
+};
+
+search.addEventListener("input", render);
+categoryFilter.addEventListener("change", render);
+
+render();
+</script>
+
+</body>
+</html>
