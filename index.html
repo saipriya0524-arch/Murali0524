@@ -54,8 +54,8 @@ h1 { text-align:center; }
   display:flex;
   gap:10px;
   justify-content:center;
-  margin-bottom:20px;
   flex-wrap:wrap;
+  margin-bottom:10px;
 }
 
 input, select, button {
@@ -64,10 +64,18 @@ input, select, button {
   border:none;
 }
 
-#clearFilter {
+#clearFilter, #refreshBtn {
   background:#444;
   color:white;
   cursor:pointer;
+}
+
+#lastUpdated {
+  width:100%;
+  text-align:center;
+  font-size:12px;
+  opacity:0.7;
+  margin-top:6px;
 }
 
 .grid {
@@ -154,6 +162,8 @@ footer {
     <option value="all">All Categories</option>
   </select>
   <button id="clearFilter">Clear</button>
+  <button id="refreshBtn">Refresh</button>
+  <div id="lastUpdated"></div>
 </div>
 
 <h3>🕒 Recent</h3>
@@ -234,32 +244,44 @@ const categoryFilter = document.getElementById("categoryFilter");
   categoryFilter.appendChild(o);
 });
 
-async function loadStatusData() {
-  const url = "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?tqx=out:json";
-  const res = await fetch(url);
-  const text = await res.text();
-  const json = JSON.parse(text.substring(47).slice(0, -2));
-  const rows = json.table.rows;
-
-  const cols = json.table.cols.map(c => c.label.toLowerCase());
-  const urlIndex = cols.indexOf("url");
-  const statusIndex = cols.indexOf("status");
-
-  rows.forEach(r => {
-    const link = r.c[urlIndex]?.v;
-    const status = r.c[statusIndex]?.v;
-    if (link) statusMap[link] = String(status || "").toLowerCase();
-  });
+function normalizeUrl(url) {
+  return url.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
 }
 
-function makeCard(t){
+async function loadStatusData() {
+  try {
+    const res = await fetch("https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?tqx=out:json");
+    const text = await res.text();
+    const json = JSON.parse(text.substring(47).slice(0, -2));
+
+    const cols = json.table.cols.map(c => c.label.toLowerCase());
+    const urlIndex = cols.indexOf("url");
+    const statusIndex = cols.indexOf("status");
+
+    statusMap = {};
+    json.table.rows.forEach(r => {
+      const link = r.c[urlIndex]?.v;
+      const status = r.c[statusIndex]?.v;
+      if (link) statusMap[normalizeUrl(link)] = String(status).toLowerCase();
+    });
+
+    document.getElementById("lastUpdated").textContent =
+      "Last updated: " + new Date().toLocaleString();
+  } catch (e) {
+    document.getElementById("lastUpdated").textContent = "Failed to update";
+    console.error(e);
+  } finally {
+    render();
+  }
+}
+
+function makeCard(t) {
   const card = document.createElement("div");
   card.className = "card";
 
   const star = document.createElement("div");
   star.className = "star" + (favs.includes(t.url) ? " active" : "");
   star.textContent = "★";
-
   star.onclick = e => {
     e.stopPropagation();
     favs.includes(t.url) ? favs = favs.filter(x => x !== t.url) : favs.push(t.url);
@@ -275,10 +297,10 @@ function makeCard(t){
     <div class="desc">${t.desc}</div>
   `;
 
-  let raw = statusMap[t.url] || "";
-  let cls = "unknown";
-  let label = "Unknown";
+  const norm = normalizeUrl(t.url);
+  const raw = statusMap[norm] || "";
 
+  let cls = "unknown", label = "Unknown";
   if (raw.includes("working")) { cls="working"; label="Working"; }
   else if (raw.includes("redirect")) { cls="redirect"; label="Redirect"; }
   else if (raw.includes("blocked")) { cls="blocked"; label="Blocked"; }
@@ -287,12 +309,12 @@ function makeCard(t){
   const status = document.createElement("div");
   status.className = "status " + cls;
   status.innerHTML = `<span class="status-dot"></span>${label}`;
-  card.appendChild(status);
 
+  card.appendChild(status);
   card.appendChild(star);
 
   card.onclick = () => {
-    recents = [t.url, ...recents.filter(x => x !== t.url)].slice(0,5);
+    recents = [t.url, ...recents.filter(x => x !== t.url)].slice(0, 5);
     localStorage.setItem("recents", JSON.stringify(recents));
     render();
   };
@@ -339,14 +361,14 @@ document.getElementById("clearFilter").onclick = () => {
   render();
 };
 
-search.addEventListener("input", render);
-categoryFilter.addEventListener("change", render);
+document.getElementById("refreshBtn").onclick = () => {
+  document.getElementById("lastUpdated").textContent = "Refreshing...";
+  loadStatusData();
+};
 
-// IMPORTANT: ensure initial render
 search.value = "";
-loadStatusData().then(render);
+loadStatusData();
 </script>
 
 </body>
 </html>
-
