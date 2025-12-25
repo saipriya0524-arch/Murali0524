@@ -7,117 +7,157 @@
 
 <style>
 :root {
-  --bg:#0f0f0f;
-  --card:#1b1b1b;
-  --text:#ffffff;
-  --muted:#aaa;
-  --accent:#4dabf7;
+  --bg: #0f0f0f;
+  --card: #1b1b1b;
+  --text: #ffffff;
+  --muted: #9ca3af;
+  --accent: #4dabf7;
+  --border: #2a2a2a;
 }
 
 .light {
-  --bg:#f2f4f7;
-  --card:#ffffff;
-  --text:#111;
-  --muted:#555;
-  --accent:#2563eb;
+  --bg: #f3f4f6;
+  --card: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --border: #e5e7eb;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
-  margin:0;
-  padding:70px 20px 20px;
-  font-family:Arial, sans-serif;
-  background:var(--bg);
-  color:var(--text);
+  margin: 0;
+  padding: 80px 20px 30px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
 }
 
 #themeToggle {
-  position:fixed;
-  top:14px;
-  right:14px;
-  width:48px;
-  height:48px;
-  border-radius:50%;
-  border:none;
-  cursor:pointer;
-  font-size:22px;
-  background:var(--card);
-  color:var(--text);
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 20px;
 }
 
-h1 { text-align:center; }
+h1 {
+  text-align: center;
+  margin-bottom: 24px;
+}
 
 .controls {
-  display:flex;
-  gap:10px;
-  justify-content:center;
-  margin-bottom:20px;
-  flex-wrap:wrap;
+  max-width: 900px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1fr 180px 100px;
+  gap: 12px;
+  margin-bottom: 32px;
 }
 
-input, select, button {
-  padding:10px;
-  border-radius:8px;
-  border:none;
+.controls input,
+.controls select,
+.controls button {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+}
+
+.controls button {
+  cursor: pointer;
+}
+
+section {
+  max-width: 1200px;
+  margin: auto;
+  margin-bottom: 36px;
+}
+
+section h3 {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-  gap:16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
 }
 
 .card {
-  background:var(--card);
-  padding:16px;
-  border-radius:14px;
-  position:relative;
-  transition:.25s;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px;
+  position: relative;
+  border: 1px solid var(--border);
+  transition: transform .2s ease, box-shadow .2s ease;
 }
 
 .card:hover {
-  transform:translateY(-6px);
-  box-shadow:0 12px 30px rgba(0,0,0,.45);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0,0,0,.35);
 }
 
-.title { color:var(--accent); font-weight:bold; text-decoration:none; }
-.desc { font-size:14px; color:var(--muted); }
+.card a.title {
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.desc {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
 
 .star {
-  position:absolute;
-  top:10px;
-  right:10px;
-  cursor:pointer;
-  font-size:20px;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--muted);
 }
 
-.star.active { color:gold; }
-
-.status {
-  position:absolute;
-  bottom:12px;
-  right:12px;
-  display:flex;
-  align-items:center;
-  gap:6px;
-  font-size:11px;
+.star.active {
+  color: gold;
 }
 
-.status-dot {
-  width:8px;
-  height:8px;
-  border-radius:50%;
+.category {
+  margin-top: 10px;
+  font-size: 12px;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(77,171,247,.15);
+  color: var(--accent);
 }
-
-.status.working .status-dot { background:#22c55e; }
-.status.redirect .status-dot { background:#facc15; }
-.status.blocked .status-dot { background:#ef4444; }
-.status.broken .status-dot { background:#f59e0b; }
-.status.unknown .status-dot { background:#6b7280; }
 
 footer {
-  margin-top:40px;
-  text-align:center;
-  opacity:.7;
+  text-align: center;
+  margin-top: 40px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+@media (max-width: 700px) {
+  .controls {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 </head>
@@ -129,64 +169,95 @@ footer {
 <h1>🧠 Useful Tools Hub</h1>
 
 <div class="controls">
-  <input id="search" placeholder="Search tools...">
-  <select id="categoryFilter"><option value="all">All</option></select>
+  <input id="search" placeholder="Search tools..." autocomplete="off">
+  <select id="categoryFilter">
+    <option value="all">All Categories</option>
+  </select>
   <button id="clearFilter">Clear</button>
 </div>
 
-<h3>🕒 Recent</h3>
-<div id="recentGrid" class="grid"></div>
+<section>
+  <h3>🕒 Recent</h3>
+  <div id="recentGrid" class="grid"></div>
+</section>
 
-<h3>⭐ Favorites</h3>
-<div id="favGrid" class="grid"></div>
+<section>
+  <h3>⭐ Favorites</h3>
+  <div id="favGrid" class="grid"></div>
+</section>
 
-<h3>All Tools</h3>
-<div id="grid" class="grid"></div>
+<section>
+  <h3>All Tools</h3>
+  <div id="grid" class="grid"></div>
+</section>
 
-<footer> All Rights are Reserved @2026 | Credits to <b>Murali K</b></footer>
+<footer>Credits to <b>Murali K</b></footer>
 
 <script>
-const tools = [
-  {url:"https://openai.com",desc:"AI Platform",cat:"AI"},
-  {url:"https://www.google.com",desc:"Search Engine",cat:"Utility"},
-  {url:"https://github.com",desc:"Code Hosting",cat:"Development"}
-];
-
+let tools = [];
 let favs = JSON.parse(localStorage.getItem("favs") || "[]");
 let recents = JSON.parse(localStorage.getItem("recents") || "[]");
-let statusMap = {};
 
 const grid = document.getElementById("grid");
 const favGrid = document.getElementById("favGrid");
 const recentGrid = document.getElementById("recentGrid");
+const search = document.getElementById("search");
+const categoryFilter = document.getElementById("categoryFilter");
 
-[...new Set(tools.map(t => t.cat))].forEach(c => {
-  const o = document.createElement("option");
-  o.value = c;
-  o.textContent = c;
-  categoryFilter.appendChild(o);
-});
+function detectCategory(text) {
+  text = text.toLowerCase();
+  const rules = [
+    ["ai","gpt","image","generate"], "AI",
+    ["game","play","arcade"], "Games",
+    ["pdf","doc","file","convert"], "Productivity",
+    ["job","resume","career"], "Jobs",
+    ["learn","course","tutorial"], "Learning",
+    ["security","virus","scan"], "Security",
+    ["design","photo","ui"], "Design",
+    ["video","audio","media"], "Media",
+    ["github","code","dev"], "Development"
+  ];
 
-async function loadStatusData() {
-  try {
-    const url = "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
-    const res = await fetch(url);
-    const text = await res.text();
-    const json = JSON.parse(text.substring(47).slice(0, -2));
-
-    const cols = json.table.cols.map(c => c.label.toLowerCase());
-    const urlIndex = cols.indexOf("url");
-    const statusIndex = cols.indexOf("status");
-
-    json.table.rows.forEach(r => {
-      const link = r.c[urlIndex]?.v;
-      const status = r.c[statusIndex]?.v;
-      if (link) statusMap[link] = String(status).toLowerCase();
-    });
-
-  } catch (e) {
-    console.error("Sheet load failed", e);
+  for (let i = 0; i < rules.length; i += 2) {
+    if (rules[i].some(k => text.includes(k))) return rules[i+1];
   }
+  return "Other";
+}
+
+async function loadSheetData() {
+  const url =
+    "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
+
+  const res = await fetch(url);
+  const text = await res.text();
+  const json = JSON.parse(text.substring(47).slice(0, -2));
+
+  tools = [];
+
+  json.table.rows.forEach(r => {
+    const url = r.c[0]?.v;
+    const desc = r.c[1]?.v || "";
+    if (!url) return;
+
+    tools.push({
+      url,
+      desc,
+      cat: detectCategory(url + " " + desc)
+    });
+  });
+
+  buildCategories();
+  render();
+}
+
+function buildCategories() {
+  categoryFilter.innerHTML = `<option value="all">All Categories</option>`;
+  [...new Set(tools.map(t => t.cat))].sort().forEach(c => {
+    const o = document.createElement("option");
+    o.value = c;
+    o.textContent = c;
+    categoryFilter.appendChild(o);
+  });
 }
 
 function makeCard(t) {
@@ -207,15 +278,11 @@ function makeCard(t) {
   };
 
   card.innerHTML = `
-    <a class="title" href="${t.url}" target="_blank">${t.url.replace("https://","")}</a>
+    <a class="title" href="${t.url}" target="_blank">${t.url.replace(/^https?:\/\//,"")}</a>
     <div class="desc">${t.desc}</div>
+    <div class="category">${t.cat}</div>
   `;
 
-  let status = statusMap[t.url] || "unknown";
-  const s = document.createElement("div");
-  s.className = "status " + status;
-  s.innerHTML = `<span class="status-dot"></span>${status}`;
-  card.appendChild(s);
   card.appendChild(star);
 
   card.onclick = () => {
@@ -229,12 +296,15 @@ function makeCard(t) {
 
 function render() {
   grid.innerHTML = favGrid.innerHTML = recentGrid.innerHTML = "";
+
   const q = search.value.toLowerCase();
   const c = categoryFilter.value;
 
   tools.forEach(t => {
-    if ((q && !t.url.includes(q) && !t.desc.toLowerCase().includes(q)) ||
-        (c !== "all" && t.cat !== c)) return;
+    if (
+      (q && !t.url.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) ||
+      (c !== "all" && t.cat !== c)
+    ) return;
     grid.appendChild(makeCard(t));
   });
 
@@ -251,6 +321,8 @@ function render() {
 
 document.getElementById("themeToggle").onclick = () => {
   document.body.classList.toggle("light");
+  document.getElementById("themeToggle").textContent =
+    document.body.classList.contains("light") ? "☀️" : "🌙";
 };
 
 document.getElementById("clearFilter").onclick = () => {
@@ -262,10 +334,9 @@ document.getElementById("clearFilter").onclick = () => {
 search.oninput = render;
 categoryFilter.onchange = render;
 
-loadStatusData().then(render);
+loadSheetData();
 </script>
 
 </body>
 </html>
-
 
