@@ -67,6 +67,7 @@ button{background:#444;color:#fff;cursor:pointer;}
   padding:16px;
   border-radius:14px;
   position:relative;
+  transition:.2s;
 }
 .card:hover{
   transform:translateY(-4px);
@@ -167,10 +168,15 @@ footer{
 const SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
 
-/* ================= STATE ================= */
+/* ================= DOM ================= */
 const grid = document.getElementById("grid");
 const search = document.getElementById("search");
 const categoryFilter = document.getElementById("categoryFilter");
+const themeToggle = document.getElementById("themeToggle");
+const clearBtn = document.getElementById("clearBtn");
+const refreshBtn = document.getElementById("refreshBtn");
+
+/* ================= STATE ================= */
 let data = [];
 
 /* ================= THEME ================= */
@@ -185,10 +191,9 @@ themeToggle.onclick = () => {
   );
 };
 
-/* ================= SAFE HELPERS ================= */
+/* ================= HELPERS ================= */
 function safeHostname(url) {
   try {
-    if (!url || !url.startsWith("http")) return "";
     return new URL(url).hostname.replace("www.", "");
   } catch {
     return "";
@@ -218,16 +223,14 @@ async function loadData() {
       label: cols.indexOf("status_label")
     };
 
-    data = (json.table.rows || []).map(r => ({
+    data = json.table.rows.map(r => ({
       url: r.c[i.url]?.v || "",
       cat: r.c[i.cat]?.v || "",
       desc: r.c[i.desc]?.v || "",
       code: r.c[i.code]?.v,
       label: r.c[i.label]?.v || ""
-    }))
-    .filter(d => d.url && d.url.startsWith("http"));
+    })).filter(d => d.url.startsWith("http"));
 
-    /* Populate categories */
     categoryFilter.innerHTML = '<option value="all">All Categories</option>';
     [...new Set(data.map(d => d.cat).filter(Boolean))].forEach(c => {
       const o = document.createElement("option");
@@ -240,8 +243,7 @@ async function loadData() {
 
     render();
   } catch (e) {
-    grid.innerHTML =
-      "<div style='text-align:center;opacity:.7'>Failed to load data</div>";
+    grid.innerHTML = "<div style='opacity:.7'>Failed to load data</div>";
     console.error(e);
   }
 }
@@ -253,8 +255,7 @@ function render() {
   const c = categoryFilter.value;
 
   data.forEach(t => {
-    if (q && !t.url.toLowerCase().includes(q)
-          && !t.desc.toLowerCase().includes(q)) return;
+    if (q && !t.url.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return;
     if (c !== "all" && t.cat !== c) return;
 
     let dot = "broken";
@@ -270,12 +271,8 @@ function render() {
       </a>
       <div class="desc">${t.desc}</div>
       <div class="badge">${t.cat || "Other"}</div>
-      <div class="status">
-        <span class="dot ${dot}"></span>${t.label}
-      </div>
-      <div class="tooltip">
-        URL: ${t.url}<br>Status: ${t.code}
-      </div>
+      <div class="status"><span class="dot ${dot}"></span>${t.label}</div>
+      <div class="tooltip">URL: ${t.url}<br>Status: ${t.code}</div>
     `;
     grid.appendChild(card);
   });
@@ -297,3 +294,4 @@ loadData();
 
 </body>
 </html>
+
