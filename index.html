@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Useful Tools Hub</title>
+<title>ToolHub</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -42,9 +42,6 @@ body {
   font-size:22px;
   background:var(--card);
   color:var(--text);
-  display:flex;
-  align-items:center;
-  justify-content:center;
   z-index:999;
 }
 
@@ -64,18 +61,10 @@ input, select, button {
   border:none;
 }
 
-#clearFilter, #refreshBtn {
+button {
   background:#444;
   color:white;
   cursor:pointer;
-}
-
-#lastUpdated {
-  width:100%;
-  text-align:center;
-  font-size:12px;
-  opacity:0.7;
-  margin-top:6px;
 }
 
 .grid {
@@ -89,15 +78,12 @@ input, select, button {
   padding:16px;
   border-radius:14px;
   position:relative;
-  transition:.25s;
 }
 
 .card:hover {
-  transform:translateY(-6px);
-  box-shadow:0 12px 30px rgba(0,0,0,.45);
+  transform:translateY(-4px);
+  box-shadow:0 8px 20px rgba(0,0,0,.4);
 }
-
-.icon img { width:36px; }
 
 .title {
   color:var(--accent);
@@ -110,15 +96,6 @@ input, select, button {
   color:var(--muted);
 }
 
-.star {
-  position:absolute;
-  top:10px;
-  right:10px;
-  font-size:20px;
-  cursor:pointer;
-}
-.star.active { color:gold; }
-
 .status {
   position:absolute;
   bottom:12px;
@@ -126,7 +103,7 @@ input, select, button {
   display:flex;
   align-items:center;
   gap:6px;
-  font-size:11px;
+  font-size:12px;
   font-weight:bold;
 }
 
@@ -138,13 +115,32 @@ input, select, button {
 
 .status.working .status-dot { background:#22c55e; }
 .status.redirect .status-dot { background:#facc15; }
-.status.blocked .status-dot { background:#ef4444; }
-.status.broken .status-dot { background:#f59e0b; }
+.status.broken .status-dot { background:#ef4444; }
 .status.unknown .status-dot { background:#6b7280; }
 
+.tooltip {
+  position:absolute;
+  bottom:42px;
+  right:10px;
+  background:#111;
+  color:#fff;
+  padding:6px 10px;
+  border-radius:6px;
+  font-size:11px;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(6px);
+  transition:.2s;
+}
+
+.card:hover .tooltip {
+  opacity:1;
+  transform:translateY(0);
+}
+
 footer {
-  margin-top:40px;
   text-align:center;
+  margin-top:40px;
   opacity:.7;
 }
 </style>
@@ -154,219 +150,125 @@ footer {
 
 <button id="themeToggle">🌙</button>
 
-<h1>🧠 Useful Tools Hub</h1>
+<h1>🧠 ToolHub</h1>
 
 <div class="controls">
-  <input id="search" placeholder="Search tools..." autocomplete="off">
+  <input id="search" placeholder="Search tools...">
   <select id="categoryFilter">
     <option value="all">All Categories</option>
   </select>
-  <button id="clearFilter">Clear</button>
   <button id="refreshBtn">Refresh</button>
-  <div id="lastUpdated"></div>
 </div>
 
-<h3>🕒 Recent</h3>
-<div id="recentGrid" class="grid"></div>
+<div id="lastUpdated" style="text-align:center;font-size:12px;opacity:.7;"></div>
 
-<h3>⭐ Favorites</h3>
-<div id="favGrid" class="grid"></div>
-
-<h3>All Tools</h3>
 <div id="grid" class="grid"></div>
 
-<footer>Credits to <b>Murali K</b>. All rights reserved.</footer>
+<footer>Powered by Google Sheets</footer>
 
 <script>
+const SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?tqx=out:json";
+
 const tools = [
   {url:"https://letsenhance.io/",desc:"AI image enhancer",cat:"AI"},
   {url:"https://toffeeshare.com/",desc:"File sharing",cat:"Utility"},
   {url:"https://poki.com/",desc:"Online games",cat:"Games"},
-  {url:"https://app.invoicesimple.com/login#accountRequired",desc:"Invoice creator",cat:"Productivity"},
   {url:"https://vocalremover.org/",desc:"Remove vocals",cat:"AI"},
   {url:"https://z-lib.org/",desc:"Ebook library",cat:"Learning"},
   {url:"https://digitaldefynd.com/",desc:"Learning platform",cat:"Learning"},
-  {url:"https://downdetector.in/",desc:"Outage monitor",cat:"Security"},
-  {url:"https://www.hacksplaining.com/",desc:"Cybersecurity learning",cat:"Learning"},
-  {url:"https://stumbled.to/",desc:"Discover websites",cat:"Discovery"},
-  {url:"https://www.discuvver.com/",desc:"Random websites",cat:"Discovery"},
-  {url:"https://allgamesatoz.com/",desc:"PC games",cat:"Games"},
-  {url:"https://myinterviewpractice.com/industries/",desc:"Interview prep",cat:"Jobs"},
-  {url:"https://osintframework.com/",desc:"OSINT tools",cat:"Security"},
-  {url:"http://driving-tests.in/",desc:"Driving test prep",cat:"Learning"},
-  {url:"https://app.diagrams.net/",desc:"Flowcharts",cat:"Productivity"},
-  {url:"https://speedtest.net.in/",desc:"Internet speed test",cat:"Utility"},
-  {url:"https://123apps.com/",desc:"Media tools",cat:"Productivity"},
-  {url:"https://archive.org/details/internetarcade",desc:"Retro games",cat:"Games"},
-  {url:"https://pfpmaker.com/",desc:"Profile photo maker",cat:"Design"},
-  {url:"https://genial.ly/",desc:"Interactive content",cat:"Design"},
-  {url:"https://www.careerswave.in/",desc:"Free newspapers",cat:"Learning"},
-  {url:"https://lumpysoft.com/",desc:"Free downloads",cat:"Utility"},
-  {url:"https://www.classcentral.com/",desc:"Online courses",cat:"Learning"},
-  {url:"https://flowcv.io/",desc:"Resume builder",cat:"Jobs"},
-  {url:"https://www.magiceraser.io/",desc:"Remove objects",cat:"AI"},
-  {url:"https://cultivatedculture.com/resume-scanner/",desc:"Resume scanner",cat:"Jobs"},
-  {url:"https://tinywow.com/",desc:"File utilities",cat:"Productivity"},
-  {url:"https://quillbot.com/",desc:"Text rewriting",cat:"AI"},
-  {url:"https://freelearninglist.org/",desc:"Free learning",cat:"Learning"},
-  {url:"https://www.sejda.com/pdf-editor",desc:"PDF editor",cat:"Productivity"},
-  {url:"https://virusscan.jotti.org/",desc:"Virus scanner",cat:"Security"},
-  {url:"https://www.virustotal.com/gui/",desc:"Malware scanner",cat:"Security"},
-  {url:"https://easypdf.com/ocr-online",desc:"OCR tool",cat:"Productivity"},
-  {url:"https://palette.fm/",desc:"AI colorizer",cat:"AI"},
-  {url:"https://www.colossyan.com/",desc:"AI video creator",cat:"AI"},
-  {url:"https://www.upscale.media/",desc:"Image upscaler",cat:"AI"},
-  {url:"https://openai.com/",desc:"AI platform",cat:"AI"},
-  {url:"https://www.myheritage.com/",desc:"Photo animation",cat:"AI"},
-  {url:"https://weworkremotely.com/",desc:"Remote jobs",cat:"Jobs"},
-  {url:"https://www.kickresume.com/en/",desc:"Resume builder",cat:"Jobs"},
-  {url:"https://triplebyte.com/company",desc:"Hiring platform",cat:"Jobs"},
-  {url:"https://cursa.app/en",desc:"Free certificates",cat:"Learning"},
-  {url:"https://www.levels.fyi/",desc:"Salary insights",cat:"Jobs"},
-  {url:"https://rytr.me/",desc:"AI writing",cat:"AI"},
-  {url:"https://dos.zone/",desc:"Vintage games",cat:"Games"}
+  {url:"https://downdetector.in/",desc:"Outage monitor",cat:"Security"}
 ];
 
-let favs = JSON.parse(localStorage.getItem("favs") || "[]");
-let recents = JSON.parse(localStorage.getItem("recents") || "[]");
 let statusMap = {};
-
 const grid = document.getElementById("grid");
-const favGrid = document.getElementById("favGrid");
-const recentGrid = document.getElementById("recentGrid");
 const search = document.getElementById("search");
 const categoryFilter = document.getElementById("categoryFilter");
 
-[...new Set(tools.map(t => t.cat))].forEach(c => {
-  const o = document.createElement("option");
-  o.value = c;
-  o.textContent = c;
-  categoryFilter.appendChild(o);
-});
-
-function normalizeUrl(url) {
-  return url.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
-}
-
-async function loadStatusData() {
-  try {
-    const res = await fetch("https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?tqx=out:json");
-    const text = await res.text();
-    const json = JSON.parse(text.substring(47).slice(0, -2));
-
-    const cols = json.table.cols.map(c => c.label.toLowerCase());
-    const urlIndex = cols.indexOf("url");
-    const statusIndex = cols.indexOf("status");
-
-    statusMap = {};
-    json.table.rows.forEach(r => {
-      const link = r.c[urlIndex]?.v;
-      const status = r.c[statusIndex]?.v;
-      if (link) statusMap[normalizeUrl(link)] = String(status).toLowerCase();
-    });
-
-    document.getElementById("lastUpdated").textContent =
-      "Last updated: " + new Date().toLocaleString();
-  } catch (e) {
-    document.getElementById("lastUpdated").textContent = "Failed to update";
-    console.error(e);
-  } finally {
-    render();
-  }
-}
-
-function makeCard(t) {
-  const card = document.createElement("div");
-  card.className = "card";
-
-  const star = document.createElement("div");
-  star.className = "star" + (favs.includes(t.url) ? " active" : "");
-  star.textContent = "★";
-  star.onclick = e => {
-    e.stopPropagation();
-    favs.includes(t.url) ? favs = favs.filter(x => x !== t.url) : favs.push(t.url);
-    localStorage.setItem("favs", JSON.stringify(favs));
-    render();
-  };
-
-  card.innerHTML = `
-    <div class="icon">
-      <img src="https://www.google.com/s2/favicons?sz=64&domain=${new URL(t.url).hostname}">
-    </div>
-    <a class="title" href="${t.url}" target="_blank">${new URL(t.url).hostname.replace("www.","")}</a>
-    <div class="desc">${t.desc}</div>
-  `;
-
-  const norm = normalizeUrl(t.url);
-  const raw = statusMap[norm] || "";
-
-  let cls = "unknown", label = "Unknown";
-  if (raw.includes("working")) { cls="working"; label="Working"; }
-  else if (raw.includes("redirect")) { cls="redirect"; label="Redirect"; }
-  else if (raw.includes("blocked")) { cls="blocked"; label="Blocked"; }
-  else if (raw.includes("broken")) { cls="broken"; label="Broken"; }
-
-  const status = document.createElement("div");
-  status.className = "status " + cls;
-  status.innerHTML = `<span class="status-dot"></span>${label}`;
-
-  card.appendChild(status);
-  card.appendChild(star);
-
-  card.onclick = () => {
-    recents = [t.url, ...recents.filter(x => x !== t.url)].slice(0, 5);
-    localStorage.setItem("recents", JSON.stringify(recents));
-    render();
-  };
-
-  return card;
-}
-
-function render() {
-  grid.innerHTML = "";
-  favGrid.innerHTML = "";
-  recentGrid.innerHTML = "";
-
-  const q = search.value.toLowerCase();
-  const c = categoryFilter.value;
-
-  tools.forEach(t => {
-    if (
-      (q && !t.desc.toLowerCase().includes(q) && !t.url.toLowerCase().includes(q)) ||
-      (c !== "all" && t.cat !== c)
-    ) return;
-    grid.appendChild(makeCard(t));
-  });
-
-  favs.forEach(f => {
-    const t = tools.find(x => x.url === f);
-    if (t && (c === "all" || t.cat === c)) favGrid.appendChild(makeCard(t));
-  });
-
-  recents.forEach(r => {
-    const t = tools.find(x => x.url === r);
-    if (t && (c === "all" || t.cat === c)) recentGrid.appendChild(makeCard(t));
-  });
+/* ---------- Theme Memory ---------- */
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "light") {
+  document.body.classList.add("light");
+  document.getElementById("themeToggle").textContent = "☀️";
 }
 
 document.getElementById("themeToggle").onclick = () => {
   document.body.classList.toggle("light");
-  document.getElementById("themeToggle").textContent =
-    document.body.classList.contains("light") ? "☀️" : "🌙";
+  const isLight = document.body.classList.contains("light");
+  localStorage.setItem("theme", isLight ? "light" : "dark");
+  document.getElementById("themeToggle").textContent = isLight ? "☀️" : "🌙";
 };
 
-document.getElementById("clearFilter").onclick = () => {
-  search.value = "";
-  categoryFilter.value = "all";
+/* ---------- Helpers ---------- */
+function normalize(url){
+  return url.replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/$/,'');
+}
+
+/* ---------- Load Google Sheet ---------- */
+async function loadStatusData(){
+  try {
+    const res = await fetch(SHEET_URL);
+    const txt = await res.text();
+    const json = JSON.parse(txt.substring(47).slice(0,-2));
+
+    const cols = json.table.cols.map(c => c.label.toLowerCase());
+    const urlI = cols.indexOf("url");
+    const statusI = cols.indexOf("http_status");
+
+    statusMap = {};
+    json.table.rows.forEach(r => {
+      if (r.c[urlI]?.v)
+        statusMap[normalize(r.c[urlI].v)] = parseInt(r.c[statusI]?.v);
+    });
+
+    document.getElementById("lastUpdated").textContent =
+      "Last updated: " + new Date().toLocaleString();
+
+  } catch {
+    document.getElementById("lastUpdated").textContent = "Failed to load data";
+  }
+
   render();
-};
+}
 
-document.getElementById("refreshBtn").onclick = () => {
-  document.getElementById("lastUpdated").textContent = "Refreshing...";
-  loadStatusData();
-};
+/* ---------- Render Cards ---------- */
+function render() {
+  grid.innerHTML = "";
+  const q = search.value.toLowerCase();
+  const c = categoryFilter.value;
 
-search.value = "";
+  tools.forEach(t => {
+    if ((q && !t.desc.toLowerCase().includes(q)) || (c !== "all" && t.cat !== c)) return;
+
+    const code = statusMap[normalize(t.url)];
+    let cls = "unknown", label = "Unknown";
+
+    if (code === 200) { cls = "working"; label = "Working"; }
+    else if (code >= 300 && code < 400) { cls = "redirect"; label = "Redirect"; }
+    else if (code) { cls = "broken"; label = "Not Working"; }
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <a class="title" href="${t.url}" target="_blank">${t.url}</a>
+      <div class="desc">${t.desc}</div>
+      <div class="status ${cls}">
+        <span class="status-dot"></span>${label}
+      </div>
+      <div class="tooltip">
+        URL: ${t.url}<br>Status: ${code ?? "N/A"}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+/* ---------- Events ---------- */
+search.oninput = render;
+categoryFilter.onchange = render;
+document.getElementById("refreshBtn").onclick = loadStatusData;
+
+/* ---------- Init ---------- */
 loadStatusData();
 </script>
 
