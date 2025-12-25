@@ -22,26 +22,33 @@
 }
 body{
   margin:0;
-  padding:70px 20px;
+  padding:80px 20px 40px;
   font-family:Arial,sans-serif;
   background:var(--bg);
   color:var(--text);
 }
+
+/* ================= HEADER ================= */
 #themeToggle{
   position:fixed;
-  top:14px;
-  right:14px;
-  width:48px;
-  height:48px;
+  top:16px;
+  right:16px;
+  width:46px;
+  height:46px;
   border-radius:50%;
   border:none;
-  font-size:22px;
+  font-size:20px;
   cursor:pointer;
   background:var(--card);
   color:var(--text);
 }
-h1{text-align:center;}
 
+h1{
+  text-align:center;
+  margin-bottom:20px;
+}
+
+/* ================= CONTROLS ================= */
 .controls{
   display:flex;
   gap:10px;
@@ -50,30 +57,66 @@ h1{text-align:center;}
   margin-bottom:12px;
 }
 input,select,button{
-  padding:10px;
+  padding:10px 12px;
   border-radius:8px;
   border:none;
 }
-button{background:#444;color:#fff;cursor:pointer;}
+button{
+  background:#444;
+  color:#fff;
+  cursor:pointer;
+}
 
+/* ================= UPDATED TIME ================= */
+#lastUpdated{
+  display:block;
+  margin:18px auto 40px;
+  text-align:center;
+  font-size:12px;
+  opacity:.6;
+}
+
+/* ================= SECTIONS ================= */
+.section{
+  margin-bottom:52px;
+}
+.section h2{
+  margin:0 0 20px;
+  font-size:18px;
+  font-weight:600;
+  opacity:.9;
+}
+
+/* ================= GRID ================= */
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-  gap:16px;
+  gap:18px;
+  margin-top:8px;
 }
 
+/* ================= CARD ================= */
 .card{
   background:var(--card);
   padding:16px;
   border-radius:14px;
   position:relative;
-  transition:.2s;
+  min-height:150px;
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease,
+    background-color .25s ease;
+  will-change: transform;
 }
 .card:hover{
-  transform:translateY(-4px);
-  box-shadow:0 10px 24px rgba(0,0,0,.4);
+  transform:translateY(-6px) scale(1.01);
+  box-shadow:0 14px 32px rgba(0,0,0,.45);
+}
+.card:active{
+  transform:scale(0.98);
 }
 
+/* ================= CARD CONTENT ================= */
 .title{
   display:flex;
   align-items:center;
@@ -81,6 +124,9 @@ button{background:#444;color:#fff;cursor:pointer;}
   font-weight:bold;
   color:var(--accent);
   text-decoration:none;
+}
+.card:hover .title{
+  text-decoration:underline;
 }
 .title img{
   width:22px;
@@ -91,11 +137,11 @@ button{background:#444;color:#fff;cursor:pointer;}
 .desc{
   font-size:14px;
   color:var(--muted);
+  margin:6px 0 8px;
 }
 
 .badge{
   display:inline-block;
-  margin-top:6px;
   padding:4px 10px;
   border-radius:999px;
   font-size:11px;
@@ -103,6 +149,7 @@ button{background:#444;color:#fff;cursor:pointer;}
   color:#9dd1ff;
 }
 
+/* ================= STATUS ================= */
 .status{
   position:absolute;
   bottom:12px;
@@ -122,24 +169,77 @@ button{background:#444;color:#fff;cursor:pointer;}
 .redirect{background:#facc15;}
 .broken{background:#ef4444;}
 
-.tooltip{
+/* ================= FAVORITE ================= */
+.star{
   position:absolute;
-  bottom:42px;
-  right:10px;
-  background:#111;
-  color:#fff;
-  padding:6px 10px;
-  border-radius:6px;
-  font-size:11px;
-  opacity:0;
-  pointer-events:none;
+  top:12px;
+  right:12px;
+  font-size:18px;
+  cursor:pointer;
+  opacity:.5;
+  transition:transform .2s ease, opacity .2s ease;
 }
-.card:hover .tooltip{opacity:1;}
+.star:hover{
+  transform:scale(1.2);
+  opacity:.8;
+}
+.star.active{
+  opacity:1;
+  color:#facc15;
+}
 
+/* ================= FOOTER ================= */
 footer{
   text-align:center;
   margin-top:40px;
-  opacity:.7;
+  opacity:.6;
+}
+
+/* ================= MOBILE TIGHTENING ================= */
+@media (max-width:640px){
+  body{
+    padding:70px 12px 30px;
+  }
+  h1{
+    font-size:22px;
+    margin-bottom:14px;
+  }
+  .controls{
+    gap:8px;
+    margin-bottom:8px;
+  }
+  input,select,button{
+    padding:9px 10px;
+    font-size:14px;
+  }
+  #lastUpdated{
+    margin:14px auto 28px;
+    font-size:11px;
+  }
+  .section{
+    margin-bottom:36px;
+  }
+  .section h2{
+    font-size:16px;
+    margin-bottom:14px;
+  }
+  .grid{
+    gap:14px;
+  }
+  .card{
+    padding:14px;
+    min-height:140px;
+  }
+  .desc{
+    font-size:13px;
+  }
+  .badge{
+    font-size:10px;
+    padding:3px 8px;
+  }
+  .status{
+    font-size:11px;
+  }
 }
 </style>
 </head>
@@ -158,18 +258,34 @@ footer{
   <button id="refreshBtn">Refresh</button>
 </div>
 
-<div id="lastUpdated" style="text-align:center;font-size:12px;opacity:.7"></div>
-<div id="grid" class="grid"></div>
+<div id="lastUpdated"></div>
+
+<div class="section">
+  <h2>⭐ Favorites</h2>
+  <div id="favGrid" class="grid"></div>
+</div>
+
+<div class="section">
+  <h2>🕒 Recent (Top 5)</h2>
+  <div id="recentGrid" class="grid"></div>
+</div>
+
+<div class="section">
+  <h2>📦 All Tools</h2>
+  <div id="grid" class="grid"></div>
+</div>
 
 <footer>Powered by Google Sheets</footer>
 
 <script>
-/* ================= CONFIG ================= */
+/* ================= CONFIG (UNCHANGED) ================= */
 const SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
+"https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
 
 /* ================= DOM ================= */
 const grid = document.getElementById("grid");
+const favGrid = document.getElementById("favGrid");
+const recentGrid = document.getElementById("recentGrid");
 const search = document.getElementById("search");
 const categoryFilter = document.getElementById("categoryFilter");
 const themeToggle = document.getElementById("themeToggle");
@@ -178,6 +294,8 @@ const refreshBtn = document.getElementById("refreshBtn");
 
 /* ================= STATE ================= */
 let data = [];
+let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+let recent = JSON.parse(localStorage.getItem("recent") || "[]");
 
 /* ================= THEME ================= */
 if (localStorage.getItem("theme") === "light") {
@@ -192,101 +310,130 @@ themeToggle.onclick = () => {
 };
 
 /* ================= HELPERS ================= */
-function safeHostname(url) {
-  try {
-    return new URL(url).hostname.replace("www.", "");
-  } catch {
-    return "";
-  }
+function safeHostname(url){
+  try { return new URL(url).hostname.replace("www.",""); }
+  catch { return ""; }
 }
-
-function titleFromUrl(url) {
+function titleFromUrl(url){
   const h = safeHostname(url);
-  if (!h) return "Unknown";
-  const base = h.split(".")[0];
-  return base.charAt(0).toUpperCase() + base.slice(1);
+  return h ? h.split(".")[0].replace(/^\w/,c=>c.toUpperCase()) : "Unknown";
+}
+function matchesCategory(cat, selected){
+  if (selected === "all") return true;
+  return cat.split(",").map(c=>c.trim()).includes(selected);
 }
 
-/* ================= LOAD DATA ================= */
-async function loadData() {
-  try {
-    const res = await fetch(SHEET_URL);
-    const txt = await res.text();
-    const json = JSON.parse(txt.substring(47).slice(0, -2));
+/* ================= DATA LOAD (SAFE) ================= */
+async function loadData(){
+  const res = await fetch(SHEET_URL);
+  const txt = await res.text();
+  const json = JSON.parse(txt.substring(47).slice(0,-2));
 
-    const cols = json.table.cols.map(c => c.label.toLowerCase());
-    const i = {
-      url: cols.indexOf("url"),
-      cat: cols.indexOf("category"),
-      desc: cols.indexOf("description"),
-      code: cols.indexOf("http_status"),
-      label: cols.indexOf("status_label")
-    };
+  const cols = json.table.cols.map(c=>c.label.toLowerCase());
+  const i = {
+    url: cols.indexOf("url"),
+    cat: cols.indexOf("category"),
+    desc: cols.indexOf("description"),
+    code: cols.indexOf("http_status"),
+    label: cols.indexOf("status_label")
+  };
 
-    data = json.table.rows.map(r => ({
-      url: r.c[i.url]?.v || "",
-      cat: r.c[i.cat]?.v || "",
-      desc: r.c[i.desc]?.v || "",
-      code: r.c[i.code]?.v,
-      label: r.c[i.label]?.v || ""
-    })).filter(d => d.url.startsWith("http"));
+  data = json.table.rows.map(r=>({
+    url:r.c[i.url]?.v||"",
+    cat:r.c[i.cat]?.v||"",
+    desc:r.c[i.desc]?.v||"",
+    code:r.c[i.code]?.v,
+    label:r.c[i.label]?.v||""
+  })).filter(d=>d.url.startsWith("http"));
 
-    categoryFilter.innerHTML = '<option value="all">All Categories</option>';
-    [...new Set(data.map(d => d.cat).filter(Boolean))].forEach(c => {
-      const o = document.createElement("option");
-      o.value = o.textContent = c;
-      categoryFilter.appendChild(o);
-    });
+  const cats = new Set();
+  data.forEach(d=>d.cat.split(",").forEach(c=>cats.add(c.trim())));
+  categoryFilter.innerHTML='<option value="all">All Categories</option>';
+  [...cats].sort().forEach(c=>{
+    const o=document.createElement("option");
+    o.value=o.textContent=c;
+    categoryFilter.appendChild(o);
+  });
 
-    document.getElementById("lastUpdated").innerText =
-      "Last updated: " + new Date().toLocaleString();
+  document.getElementById("lastUpdated").innerText =
+    "Last updated: " + new Date().toLocaleString();
 
+  render();
+}
+
+/* ================= CARD ================= */
+function createCard(t){
+  let dot="broken";
+  if(t.code===200) dot="working";
+  else if(t.code>=300 && t.code<400) dot="redirect";
+
+  const card=document.createElement("div");
+  card.className="card";
+  const isFav=favorites.includes(t.url);
+
+  card.innerHTML=`
+    <span class="star ${isFav?"active":""}">⭐</span>
+    <a class="title" href="${t.url}" target="_blank">
+      <img src="https://www.google.com/s2/favicons?sz=64&domain=${safeHostname(t.url)}">
+      ${titleFromUrl(t.url)}
+    </a>
+    <div class="desc">${t.desc}</div>
+    <div class="badge">${t.cat||"Other"}</div>
+    <div class="status"><span class="dot ${dot}"></span>${t.label}</div>
+  `;
+
+  card.querySelector(".star").onclick=e=>{
+    e.stopPropagation();
+    favorites.includes(t.url)
+      ? favorites=favorites.filter(f=>f!==t.url)
+      : favorites.push(t.url);
+    localStorage.setItem("favorites",JSON.stringify(favorites));
     render();
-  } catch (e) {
-    grid.innerHTML = "<div style='opacity:.7'>Failed to load data</div>";
-    console.error(e);
-  }
+  };
+
+  card.querySelector("a").onclick=()=>{
+    recent=recent.filter(r=>r!==t.url);
+    recent.unshift(t.url);
+    recent=recent.slice(0,5);
+    localStorage.setItem("recent",JSON.stringify(recent));
+  };
+
+  return card;
 }
 
 /* ================= RENDER ================= */
-function render() {
-  grid.innerHTML = "";
-  const q = search.value.toLowerCase();
-  const c = categoryFilter.value;
+function render(){
+  grid.innerHTML=favGrid.innerHTML=recentGrid.innerHTML="";
 
-  data.forEach(t => {
-    if (q && !t.url.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return;
-    if (c !== "all" && t.cat !== c) return;
+  const q=search.value.toLowerCase();
+  const c=categoryFilter.value;
 
-    let dot = "broken";
-    if (t.code === 200) dot = "working";
-    else if (t.code >= 300 && t.code < 400) dot = "redirect";
-
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
-      <a class="title" href="${t.url}" target="_blank">
-        <img src="https://www.google.com/s2/favicons?sz=64&domain=${safeHostname(t.url)}">
-        ${titleFromUrl(t.url)}
-      </a>
-      <div class="desc">${t.desc}</div>
-      <div class="badge">${t.cat || "Other"}</div>
-      <div class="status"><span class="dot ${dot}"></span>${t.label}</div>
-      <div class="tooltip">URL: ${t.url}<br>Status: ${t.code}</div>
-    `;
-    grid.appendChild(card);
+  const filtered=data.filter(t=>{
+    if(q && !t.url.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return false;
+    if(!matchesCategory(t.cat,c)) return false;
+    return true;
   });
+
+  filtered.filter(t=>favorites.includes(t.url))
+    .forEach(t=>favGrid.appendChild(createCard(t)));
+
+  recent.map(r=>filtered.find(t=>t.url===r))
+    .filter(Boolean)
+    .forEach(t=>recentGrid.appendChild(createCard(t)));
+
+  filtered.forEach(t=>grid.appendChild(createCard(t)));
 }
 
 /* ================= EVENTS ================= */
-search.oninput = render;
-categoryFilter.onchange = render;
-clearBtn.onclick = () => {
-  search.value = "";
-  categoryFilter.value = "all";
+search.oninput=render;
+categoryFilter.onchange=render;
+clearBtn.onclick=()=>{
+  search.value="";
+  categoryFilter.value="all";
+  window.scrollTo({top:0,behavior:"smooth"});
   render();
 };
-refreshBtn.onclick = loadData;
+refreshBtn.onclick=loadData;
 
 /* ================= INIT ================= */
 loadData();
@@ -294,4 +441,3 @@ loadData();
 
 </body>
 </html>
-
