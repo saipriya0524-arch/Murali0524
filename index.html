@@ -163,95 +163,115 @@ footer{
 <footer>Powered by Google Sheets</footer>
 
 <script>
+/* ================= CONFIG ================= */
 const SHEET_URL =
-"https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
+  "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
 
-const grid=document.getElementById("grid");
-const search=document.getElementById("search");
-const categoryFilter=document.getElementById("categoryFilter");
-let data=[];
+/* ================= STATE ================= */
+const grid = document.getElementById("grid");
+const search = document.getElementById("search");
+const categoryFilter = document.getElementById("categoryFilter");
+let data = [];
 
-/* Theme memory */
-if(localStorage.getItem("theme")==="light")
+/* ================= THEME ================= */
+if (localStorage.getItem("theme") === "light") {
   document.body.classList.add("light");
-
-themeToggle.onclick=()=>{
+}
+themeToggle.onclick = () => {
   document.body.classList.toggle("light");
   localStorage.setItem(
     "theme",
-    document.body.classList.contains("light")?"light":"dark"
+    document.body.classList.contains("light") ? "light" : "dark"
   );
 };
 
-/* Helpers */
-const hostname=url=>new URL(url).hostname.replace("www.","");
-const titleFromUrl=url=>{
-  const h=hostname(url).split(".")[0];
-  return h.charAt(0).toUpperCase()+h.slice(1);
-};
-
-/* Load Google Sheet */
-async function loadData(){
-  const res=await fetch(SHEET_URL);
-  const txt=await res.text();
-  const json=JSON.parse(txt.substring(47).slice(0,-2));
-
-  const cols=json.table.cols.map(c=>c.label.toLowerCase());
-  const i={
-    url:cols.indexOf("url"),
-    cat:cols.indexOf("category"),
-    desc:cols.indexOf("description"),
-    code:cols.indexOf("http_status"),
-    label:cols.indexOf("status_label")
-  };
-
-  data=json.table.rows.map(r=>({
-    url:r.c[i.url]?.v,
-    cat:r.c[i.cat]?.v,
-    desc:r.c[i.desc]?.v,
-    code:r.c[i.code]?.v,
-    label:r.c[i.label]?.v
-  })).filter(d=>d.url);
-
-  categoryFilter.innerHTML='<option value="all">All Categories</option>';
-  [...new Set(data.map(d=>d.cat).filter(Boolean))].forEach(c=>{
-    const o=document.createElement("option");
-    o.value=o.textContent=c;
-    categoryFilter.appendChild(o);
-  });
-
-  document.getElementById("lastUpdated").innerText=
-    "Last updated: "+new Date().toLocaleString();
-
-  render();
+/* ================= SAFE HELPERS ================= */
+function safeHostname(url) {
+  try {
+    if (!url || !url.startsWith("http")) return "";
+    return new URL(url).hostname.replace("www.", "");
+  } catch {
+    return "";
+  }
 }
 
-/* Render cards */
-function render(){
-  grid.innerHTML="";
-  const q=search.value.toLowerCase();
-  const c=categoryFilter.value;
+function titleFromUrl(url) {
+  const h = safeHostname(url);
+  if (!h) return "Unknown";
+  const base = h.split(".")[0];
+  return base.charAt(0).toUpperCase() + base.slice(1);
+}
 
-  data.forEach(t=>{
-    if(q && !t.url.toLowerCase().includes(q)
-       && !t.desc?.toLowerCase().includes(q)) return;
-    if(c!=="all" && t.cat!==c) return;
+/* ================= LOAD DATA ================= */
+async function loadData() {
+  try {
+    const res = await fetch(SHEET_URL);
+    const txt = await res.text();
+    const json = JSON.parse(txt.substring(47).slice(0, -2));
 
-    let dot="broken";
-    if(t.code===200) dot="working";
-    else if(t.code>=300 && t.code<400) dot="redirect";
+    const cols = json.table.cols.map(c => c.label.toLowerCase());
+    const i = {
+      url: cols.indexOf("url"),
+      cat: cols.indexOf("category"),
+      desc: cols.indexOf("description"),
+      code: cols.indexOf("http_status"),
+      label: cols.indexOf("status_label")
+    };
 
-    const card=document.createElement("div");
-    card.className="card";
-    card.innerHTML=`
+    data = (json.table.rows || []).map(r => ({
+      url: r.c[i.url]?.v || "",
+      cat: r.c[i.cat]?.v || "",
+      desc: r.c[i.desc]?.v || "",
+      code: r.c[i.code]?.v,
+      label: r.c[i.label]?.v || ""
+    }))
+    .filter(d => d.url && d.url.startsWith("http"));
+
+    /* Populate categories */
+    categoryFilter.innerHTML = '<option value="all">All Categories</option>';
+    [...new Set(data.map(d => d.cat).filter(Boolean))].forEach(c => {
+      const o = document.createElement("option");
+      o.value = o.textContent = c;
+      categoryFilter.appendChild(o);
+    });
+
+    document.getElementById("lastUpdated").innerText =
+      "Last updated: " + new Date().toLocaleString();
+
+    render();
+  } catch (e) {
+    grid.innerHTML =
+      "<div style='text-align:center;opacity:.7'>Failed to load data</div>";
+    console.error(e);
+  }
+}
+
+/* ================= RENDER ================= */
+function render() {
+  grid.innerHTML = "";
+  const q = search.value.toLowerCase();
+  const c = categoryFilter.value;
+
+  data.forEach(t => {
+    if (q && !t.url.toLowerCase().includes(q)
+          && !t.desc.toLowerCase().includes(q)) return;
+    if (c !== "all" && t.cat !== c) return;
+
+    let dot = "broken";
+    if (t.code === 200) dot = "working";
+    else if (t.code >= 300 && t.code < 400) dot = "redirect";
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
       <a class="title" href="${t.url}" target="_blank">
-        <img src="https://www.google.com/s2/favicons?sz=64&domain=${hostname(t.url)}">
+        <img src="https://www.google.com/s2/favicons?sz=64&domain=${safeHostname(t.url)}">
         ${titleFromUrl(t.url)}
       </a>
-      <div class="desc">${t.desc||""}</div>
-      <div class="badge">${t.cat||"Other"}</div>
+      <div class="desc">${t.desc}</div>
+      <div class="badge">${t.cat || "Other"}</div>
       <div class="status">
-        <span class="dot ${dot}"></span>${t.label||""}
+        <span class="dot ${dot}"></span>${t.label}
       </div>
       <div class="tooltip">
         URL: ${t.url}<br>Status: ${t.code}
@@ -261,16 +281,17 @@ function render(){
   });
 }
 
-/* Controls */
-search.oninput=render;
-categoryFilter.onchange=render;
-clearBtn.onclick=()=>{
-  search.value="";
-  categoryFilter.value="all";
+/* ================= EVENTS ================= */
+search.oninput = render;
+categoryFilter.onchange = render;
+clearBtn.onclick = () => {
+  search.value = "";
+  categoryFilter.value = "all";
   render();
 };
-refreshBtn.onclick=loadData;
+refreshBtn.onclick = loadData;
 
+/* ================= INIT ================= */
 loadData();
 </script>
 
