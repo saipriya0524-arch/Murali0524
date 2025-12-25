@@ -13,7 +13,6 @@
   --muted:#aaa;
   --accent:#4dabf7;
 }
-
 .light {
   --bg:#f2f4f7;
   --card:#ffffff;
@@ -21,7 +20,6 @@
   --muted:#555;
   --accent:#2563eb;
 }
-
 body {
   margin:0;
   padding:70px 20px 20px;
@@ -29,7 +27,6 @@ body {
   background:var(--bg);
   color:var(--text);
 }
-
 #themeToggle {
   position:fixed;
   top:14px;
@@ -43,59 +40,35 @@ body {
   background:var(--card);
   color:var(--text);
 }
-
-h1 { text-align:center; }
-
-.controls {
+h1{text-align:center;}
+.controls{
   display:flex;
   gap:10px;
   justify-content:center;
   flex-wrap:wrap;
   margin-bottom:10px;
 }
-
-input, select, button {
+input,select,button{
   padding:10px;
   border-radius:8px;
   border:none;
 }
-
-button {
-  background:#444;
-  color:white;
-  cursor:pointer;
-}
-
-.grid {
+button{background:#444;color:white;cursor:pointer;}
+.grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
   gap:16px;
 }
-
-.card {
+.card{
   background:var(--card);
   padding:16px;
   border-radius:14px;
   position:relative;
 }
-
-.card:hover {
-  transform:translateY(-4px);
-  box-shadow:0 8px 20px rgba(0,0,0,.4);
-}
-
-.title {
-  color:var(--accent);
-  font-weight:bold;
-  text-decoration:none;
-}
-
-.desc {
-  font-size:14px;
-  color:var(--muted);
-}
-
-.status {
+.card:hover{transform:translateY(-4px);box-shadow:0 8px 20px rgba(0,0,0,.4);}
+.title{color:var(--accent);font-weight:bold;text-decoration:none;}
+.desc{font-size:14px;color:var(--muted);}
+.status{
   position:absolute;
   bottom:12px;
   right:12px;
@@ -105,18 +78,11 @@ button {
   font-size:12px;
   font-weight:bold;
 }
-
-.status-dot {
-  width:8px;
-  height:8px;
-  border-radius:50%;
-}
-
-.status.working .status-dot { background:#22c55e; }
-.status.redirect .status-dot { background:#facc15; }
-.status.broken .status-dot { background:#ef4444; }
-
-.tooltip {
+.status-dot{width:8px;height:8px;border-radius:50%;}
+.status.working .status-dot{background:#22c55e;}
+.status.redirect .status-dot{background:#facc15;}
+.status.broken .status-dot{background:#ef4444;}
+.tooltip{
   position:absolute;
   bottom:42px;
   right:10px;
@@ -129,16 +95,8 @@ button {
   pointer-events:none;
   transition:.2s;
 }
-
-.card:hover .tooltip {
-  opacity:1;
-}
-
-footer {
-  text-align:center;
-  margin-top:40px;
-  opacity:.7;
-}
+.card:hover .tooltip{opacity:1;}
+footer{text-align:center;margin-top:40px;opacity:.7;}
 </style>
 </head>
 
@@ -158,14 +116,13 @@ footer {
 </div>
 
 <div id="lastUpdated" style="text-align:center;font-size:12px;opacity:.7;"></div>
-
 <div id="grid" class="grid"></div>
 
 <footer>Powered by Google Sheets</footer>
 
 <script>
 const SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?tqx=out:json";
+"https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
 
 const grid = document.getElementById("grid");
 const search = document.getElementById("search");
@@ -173,27 +130,28 @@ const categoryFilter = document.getElementById("categoryFilter");
 
 let data = [];
 
-/* Theme */
-const saved = localStorage.getItem("theme");
-if (saved === "light") document.body.classList.add("light");
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "light") document.body.classList.add("light");
 
 document.getElementById("themeToggle").onclick = () => {
   document.body.classList.toggle("light");
-  localStorage.setItem("theme",
-    document.body.classList.contains("light") ? "light" : "dark");
+  localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
 };
 
-/* Load data */
-async function loadData() {
+function normalize(u){
+  return u.replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/$/,'');
+}
+
+async function loadData(){
   const res = await fetch(SHEET_URL);
   const txt = await res.text();
-  const json = JSON.parse(txt.substring(47).slice(0, -2));
+  const json = JSON.parse(txt.substring(47).slice(0,-2));
 
   const cols = json.table.cols.map(c => c.label.toLowerCase());
   const idx = {
     url: cols.indexOf("url"),
     name: cols.indexOf("name"),
-    category: cols.indexOf("category"),
+    cat: cols.indexOf("category"),
     desc: cols.indexOf("description"),
     status: cols.indexOf("http_status"),
     label: cols.indexOf("status_label")
@@ -202,26 +160,25 @@ async function loadData() {
   data = json.table.rows.map(r => ({
     url: r.c[idx.url]?.v,
     name: r.c[idx.name]?.v,
-    category: r.c[idx.category]?.v,
+    cat: r.c[idx.cat]?.v,
     desc: r.c[idx.desc]?.v,
     code: r.c[idx.status]?.v,
     label: r.c[idx.label]?.v
   }));
 
-  document.getElementById("lastUpdated").textContent =
+  document.getElementById("lastUpdated").innerText =
     "Last updated: " + new Date().toLocaleString();
 
   render();
 }
 
-function render() {
+function render(){
   grid.innerHTML = "";
   const q = search.value.toLowerCase();
-  const cat = categoryFilter.value;
+  const c = categoryFilter.value;
 
   data.forEach(t => {
-    if ((q && !t.name.toLowerCase().includes(q)) ||
-        (cat !== "all" && t.category !== cat)) return;
+    if ((q && !t.name.toLowerCase().includes(q)) || (c !== "all" && t.cat !== c)) return;
 
     let cls = "broken";
     if (t.code === 200) cls = "working";
@@ -235,21 +192,18 @@ function render() {
       <div class="status ${cls}">
         <span class="status-dot"></span>${t.label}
       </div>
-      <div class="tooltip">
-        URL: ${t.url}<br>Status: ${t.code}
-      </div>
+      <div class="tooltip">URL: ${t.url}<br>Status: ${t.code}</div>
     `;
     grid.appendChild(card);
   });
 }
 
-/* Controls */
 search.oninput = render;
 categoryFilter.onchange = render;
 document.getElementById("refreshBtn").onclick = loadData;
 document.getElementById("clearBtn").onclick = () => {
-  search.value = "";
-  categoryFilter.value = "all";
+  search.value="";
+  categoryFilter.value="all";
   render();
 };
 
