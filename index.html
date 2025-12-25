@@ -25,7 +25,7 @@
 body {
   margin:0;
   padding:70px 20px 20px;
-  font-family:Arial, sans-serif;
+  font-family:Arial,sans-serif;
   background:var(--bg);
   color:var(--text);
 }
@@ -49,9 +49,9 @@ h1 { text-align:center; }
 
 .controls {
   display:flex;
+  flex-wrap:wrap;
   gap:10px;
   justify-content:center;
-  flex-wrap:wrap;
   margin-bottom:10px;
 }
 
@@ -118,26 +118,6 @@ button {
 .status.broken .status-dot { background:#ef4444; }
 .status.unknown .status-dot { background:#6b7280; }
 
-.tooltip {
-  position:absolute;
-  bottom:42px;
-  right:10px;
-  background:#111;
-  color:#fff;
-  padding:6px 10px;
-  border-radius:6px;
-  font-size:11px;
-  opacity:0;
-  pointer-events:none;
-  transform:translateY(6px);
-  transition:.2s;
-}
-
-.card:hover .tooltip {
-  opacity:1;
-  transform:translateY(0);
-}
-
 footer {
   text-align:center;
   margin-top:40px;
@@ -153,7 +133,7 @@ footer {
 <h1>🧠 ToolHub</h1>
 
 <div class="controls">
-  <input id="search" placeholder="Search tools...">
+  <input id="search" placeholder="Search tools…" autocomplete="off">
   <select id="categoryFilter">
     <option value="all">All Categories</option>
   </select>
@@ -167,8 +147,12 @@ footer {
 <footer>Powered by Google Sheets</footer>
 
 <script>
+/* ---------------- CONFIG ---------------- */
+
 const SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?tqx=out:json";
+
+/* --------------------------------------- */
 
 const tools = [
   {url:"https://letsenhance.io/",desc:"AI image enhancer",cat:"AI"},
@@ -177,7 +161,7 @@ const tools = [
   {url:"https://vocalremover.org/",desc:"Remove vocals",cat:"AI"},
   {url:"https://z-lib.org/",desc:"Ebook library",cat:"Learning"},
   {url:"https://digitaldefynd.com/",desc:"Learning platform",cat:"Learning"},
-  {url:"https://downdetector.in/",desc:"Outage monitor",cat:"Security"}
+  {url:"https://downdetector.in/",desc:"Outage monitor",cat:"Security"},
 ];
 
 let statusMap = {};
@@ -185,7 +169,7 @@ const grid = document.getElementById("grid");
 const search = document.getElementById("search");
 const categoryFilter = document.getElementById("categoryFilter");
 
-/* ---------- Theme Memory ---------- */
+/* ---------- Theme memory ---------- */
 const savedTheme = localStorage.getItem("theme");
 if (savedTheme === "light") {
   document.body.classList.add("light");
@@ -200,25 +184,28 @@ document.getElementById("themeToggle").onclick = () => {
 };
 
 /* ---------- Helpers ---------- */
+
 function normalize(url){
   return url.replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/$/,'');
 }
 
-/* ---------- Load Google Sheet ---------- */
+/* ---------- Load Sheet ---------- */
+
 async function loadStatusData(){
   try {
     const res = await fetch(SHEET_URL);
     const txt = await res.text();
     const json = JSON.parse(txt.substring(47).slice(0,-2));
 
-    const cols = json.table.cols.map(c => c.label.toLowerCase());
+    const cols = json.table.cols.map(c=>c.label.toLowerCase());
     const urlI = cols.indexOf("url");
-    const statusI = cols.indexOf("http_status");
+    const statusI = cols.indexOf("status");
 
     statusMap = {};
-    json.table.rows.forEach(r => {
-      if (r.c[urlI]?.v)
+    json.table.rows.forEach(r=>{
+      if(r.c[urlI]?.v){
         statusMap[normalize(r.c[urlI].v)] = parseInt(r.c[statusI]?.v);
+      }
     });
 
     document.getElementById("lastUpdated").textContent =
@@ -227,43 +214,41 @@ async function loadStatusData(){
   } catch {
     document.getElementById("lastUpdated").textContent = "Failed to load data";
   }
-
   render();
 }
 
-/* ---------- Render Cards ---------- */
-function render() {
+/* ---------- Render ---------- */
+
+function render(){
   grid.innerHTML = "";
   const q = search.value.toLowerCase();
   const c = categoryFilter.value;
 
-  tools.forEach(t => {
+  tools.forEach(t=>{
     if ((q && !t.desc.toLowerCase().includes(q)) || (c !== "all" && t.cat !== c)) return;
 
     const code = statusMap[normalize(t.url)];
-    let cls = "unknown", label = "Unknown";
+    let cls="unknown", label="Unknown";
 
-    if (code === 200) { cls = "working"; label = "Working"; }
-    else if (code >= 300 && code < 400) { cls = "redirect"; label = "Redirect"; }
-    else if (code) { cls = "broken"; label = "Not Working"; }
+    if (code === 200) { cls="working"; label="Working"; }
+    else if (code >= 300 && code < 400) { cls="redirect"; label="Redirect"; }
+    else if (code) { cls="broken"; label="Not Working"; }
 
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
       <a class="title" href="${t.url}" target="_blank">${t.url}</a>
       <div class="desc">${t.desc}</div>
       <div class="status ${cls}">
         <span class="status-dot"></span>${label}
       </div>
-      <div class="tooltip">
-        URL: ${t.url}<br>Status: ${code ?? "N/A"}
-      </div>
     `;
-    grid.appendChild(card);
+    grid.appendChild(div);
   });
 }
 
 /* ---------- Events ---------- */
+
 search.oninput = render;
 categoryFilter.onchange = render;
 document.getElementById("refreshBtn").onclick = loadStatusData;
