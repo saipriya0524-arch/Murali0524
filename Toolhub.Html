@@ -14,7 +14,6 @@
   --accent:#4dabf7;
 }
 
-/* Light Mode */
 .light {
   --bg:#f2f4f7;
   --card:#ffffff;
@@ -25,50 +24,50 @@
 
 body {
   margin:0;
-  padding:20px;
+  padding:70px 20px 20px;
   font-family:Arial, sans-serif;
   background:var(--bg);
   color:var(--text);
-  transition:background .3s,color .3s;
+}
+
+#themeToggle {
+  position:fixed;
+  top:14px;
+  right:14px;
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  border:none;
+  cursor:pointer;
+  font-size:22px;
+  background:var(--card);
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
 }
 
 h1 { text-align:center; }
-
-#themeToggle {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  font-size: 22px;
-  background: var(--card);
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 20px rgba(0,0,0,.35);
-  transition: all 0.25s ease;
-  line-height: 1;
-  padding: 0;
-}
-#themeToggle:hover {
-  transform: scale(1.1);
-}
 
 .controls {
   display:flex;
   gap:10px;
   justify-content:center;
   margin-bottom:20px;
+  flex-wrap:wrap;
 }
 
-input, select {
+input, select, button {
   padding:10px;
   border-radius:8px;
   border:none;
+}
+
+#clearFilter {
+  background:#444;
+  color:white;
+  cursor:pointer;
 }
 
 .grid {
@@ -83,17 +82,11 @@ input, select {
   border-radius:14px;
   position:relative;
   transition:.25s;
-  animation:fadeIn .35s ease;
 }
 
 .card:hover {
   transform:translateY(-6px);
   box-shadow:0 12px 30px rgba(0,0,0,.45);
-}
-
-@keyframes fadeIn {
-  from {opacity:0; transform:translateY(10px);}
-  to {opacity:1; transform:translateY(0);}
 }
 
 .icon img { width:36px; }
@@ -115,10 +108,31 @@ input, select {
   right:10px;
   font-size:20px;
   cursor:pointer;
-  transition:.2s;
 }
-.star:hover { transform:scale(1.4) rotate(10deg); }
 .star.active { color:gold; }
+
+.status {
+  position:absolute;
+  bottom:12px;
+  right:12px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:11px;
+  font-weight:bold;
+}
+
+.status-dot {
+  width:8px;
+  height:8px;
+  border-radius:50%;
+}
+
+.status.working .status-dot { background:#22c55e; }
+.status.redirect .status-dot { background:#facc15; }
+.status.blocked .status-dot { background:#ef4444; }
+.status.broken .status-dot { background:#f59e0b; }
+.status.unknown .status-dot { background:#6b7280; }
 
 footer {
   margin-top:40px;
@@ -135,10 +149,11 @@ footer {
 <h1>🧠 Useful Tools Hub</h1>
 
 <div class="controls">
-  <input id="search" placeholder="Search tools...">
+  <input id="search" placeholder="Search tools..." autocomplete="off">
   <select id="categoryFilter">
     <option value="all">All Categories</option>
   </select>
+  <button id="clearFilter">Clear</button>
 </div>
 
 <h3>🕒 Recent</h3>
@@ -150,9 +165,7 @@ footer {
 <h3>All Tools</h3>
 <div id="grid" class="grid"></div>
 
-<footer>
-  Credits to <b>Murali K</b>. All rights reserved.
-</footer>
+<footer>Credits to <b>Murali K</b>. All rights reserved.</footer>
 
 <script>
 const tools = [
@@ -206,6 +219,7 @@ const tools = [
 
 let favs = JSON.parse(localStorage.getItem("favs") || "[]");
 let recents = JSON.parse(localStorage.getItem("recents") || "[]");
+let statusMap = {};
 
 const grid = document.getElementById("grid");
 const favGrid = document.getElementById("favGrid");
@@ -219,6 +233,24 @@ const categoryFilter = document.getElementById("categoryFilter");
   o.textContent = c;
   categoryFilter.appendChild(o);
 });
+
+async function loadStatusData() {
+  const url = "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?tqx=out:json";
+  const res = await fetch(url);
+  const text = await res.text();
+  const json = JSON.parse(text.substring(47).slice(0, -2));
+  const rows = json.table.rows;
+
+  const cols = json.table.cols.map(c => c.label.toLowerCase());
+  const urlIndex = cols.indexOf("url");
+  const statusIndex = cols.indexOf("status");
+
+  rows.forEach(r => {
+    const link = r.c[urlIndex]?.v;
+    const status = r.c[statusIndex]?.v;
+    if (link) statusMap[link] = String(status || "").toLowerCase();
+  });
+}
 
 function makeCard(t){
   const card = document.createElement("div");
@@ -239,11 +271,23 @@ function makeCard(t){
     <div class="icon">
       <img src="https://www.google.com/s2/favicons?sz=64&domain=${new URL(t.url).hostname}">
     </div>
-    <a class="title" href="${t.url}" target="_blank" title="${t.url}">
-      ${new URL(t.url).hostname.replace("www.","")}
-    </a>
+    <a class="title" href="${t.url}" target="_blank">${new URL(t.url).hostname.replace("www.","")}</a>
     <div class="desc">${t.desc}</div>
   `;
+
+  let raw = statusMap[t.url] || "";
+  let cls = "unknown";
+  let label = "Unknown";
+
+  if (raw.includes("working")) { cls="working"; label="Working"; }
+  else if (raw.includes("redirect")) { cls="redirect"; label="Redirect"; }
+  else if (raw.includes("blocked")) { cls="blocked"; label="Blocked"; }
+  else if (raw.includes("broken")) { cls="broken"; label="Broken"; }
+
+  const status = document.createElement("div");
+  status.className = "status " + cls;
+  status.innerHTML = `<span class="status-dot"></span>${label}`;
+  card.appendChild(status);
 
   card.appendChild(star);
 
@@ -289,10 +333,18 @@ document.getElementById("themeToggle").onclick = () => {
     document.body.classList.contains("light") ? "☀️" : "🌙";
 };
 
+document.getElementById("clearFilter").onclick = () => {
+  search.value = "";
+  categoryFilter.value = "all";
+  render();
+};
+
 search.addEventListener("input", render);
 categoryFilter.addEventListener("change", render);
 
-render();
+// IMPORTANT: ensure initial render
+search.value = "";
+loadStatusData().then(render);
 </script>
 
 </body>
