@@ -93,19 +93,34 @@ button{background:#444;color:#fff;cursor:pointer;}
 /* CONTENT */
 .title{
   display:flex;
-  gap:10px;
+  align-items:center;
+  gap:8px;
   font-weight:bold;
   color:var(--accent);
   text-decoration:none;
 }
+.favicon{
+  width:16px;
+  height:16px;
+  border-radius:4px;
+}
 .desc{color:var(--muted);margin:6px 0;}
 .badge{
   font-size:11px;
-  background:#2a2a2a;
   padding:4px 10px;
   border-radius:999px;
   display:inline-block;
 }
+
+/* CATEGORY COLORS */
+.badge.ai{background:#1e40af;color:#dbeafe;}
+.badge.writing{background:#065f46;color:#d1fae5;}
+.badge.image{background:#7c2d12;color:#ffedd5;}
+.badge.video{background:#6b21a8;color:#f3e8ff;}
+.badge.developer{background:#1f2937;color:#e5e7eb;}
+.badge.search{background:#92400e;color:#fef3c7;}
+.badge.productivity{background:#155e75;color:#cffafe;}
+.badge.other{background:#374151;color:#e5e7eb;}
 
 /* STATUS */
 .status{
@@ -133,7 +148,7 @@ button{background:#444;color:#fff;cursor:pointer;}
   transition:.2s;
 }
 .star:hover{color:#facc15;}
-.star.active{color:#f59e0b;} /* GOLD */
+.star.active{color:#f59e0b;}
 
 /* MOBILE */
 @media(max-width:640px){
@@ -188,6 +203,20 @@ let data=[];
 let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
 let recent=JSON.parse(localStorage.getItem("recent")||"[]");
 
+/* HELPERS */
+function titleFromUrl(url){
+  try{
+    const h=new URL(url).hostname.replace("www.","");
+    return h.split(".")[0].replace(/^\w/,c=>c.toUpperCase());
+  }catch{return "Link";}
+}
+function safeHostname(url){
+  try{return new URL(url).hostname;}catch{return "";}
+}
+function categoryClass(cat){
+  return cat.toLowerCase().replace(/\s+/g,"");
+}
+
 /* CATEGORY GUESSER */
 function guessCategory(text){
   text=text.toLowerCase();
@@ -224,7 +253,8 @@ async function loadData(force=false){
   data=json.table.rows.map(r=>{
     const url=r.c[i.url]?.v||"";
     const desc=r.c[i.desc]?.v||"";
-    let cat=r.c[i.cat]?.v||guessCategory(url+" "+desc);
+    const rawCat=r.c[i.cat]?.v||"";
+    const cat=rawCat.trim()?rawCat:guessCategory(url+" "+desc);
     return{url,desc,cat,label:r.c[i.label]?.v||"Unknown"};
   }).filter(d=>d.url.startsWith("http"));
 
@@ -258,9 +288,12 @@ function createCard(t){
 
   card.innerHTML=`
     <span class="star ${fav?"active":""}">★</span>
-    <a class="title" href="${t.url}" target="_blank">${t.url}</a>
+    <a class="title" href="${t.url}" target="_blank">
+      <img class="favicon" src="https://www.google.com/s2/favicons?sz=32&domain=${safeHostname(t.url)}">
+      ${titleFromUrl(t.url)}
+    </a>
+    <div class="badge ${categoryClass(t.cat)}">${t.cat}</div>
     <div class="desc">${t.desc}</div>
-    <div class="badge">${t.cat}</div>
     <div class="status"><span class="dot ${dot}"></span>${t.label}</div>
   `;
 
