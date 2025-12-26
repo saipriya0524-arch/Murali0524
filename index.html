@@ -76,13 +76,13 @@ button{background:#444;color:#fff;cursor:pointer;}
   gap:18px;
 }
 
-/* CARD */
+/* CARD (FIXED SIZE) */
 .card{
   background:var(--card);
-  padding:16px;
+  padding:14px;
   border-radius:14px;
   position:relative;
-  min-height:150px;
+  min-height:128px; /* FIX */
   transition:.25s;
 }
 .card:hover{
@@ -100,9 +100,10 @@ button{background:#444;color:#fff;cursor:pointer;}
   text-decoration:none;
 }
 .favicon{
-  width:16px;
-  height:16px;
-  border-radius:4px;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  flex-shrink:0;
 }
 .desc{color:var(--muted);margin:6px 0;}
 .badge{
@@ -223,14 +224,14 @@ function guessCategory(text){
   if(/ai|gpt|llm/.test(text)) return "AI";
   if(/write|grammar|text/.test(text)) return "Writing";
   if(/image|photo/.test(text)) return "Image";
-  if(/video/.test(text)) return "Video";
+  if(/video|game/.test(text)) return "Video";
   if(/code|dev/.test(text)) return "Developer";
   if(/search/.test(text)) return "Search";
-  if(/pdf|doc/.test(text)) return "Productivity";
+  if(/pdf|doc|ebook/.test(text)) return "Productivity";
   return "Other";
 }
 
-/* LOAD WITH CACHE */
+/* LOAD WITH CACHE (CATEGORY FIX APPLIED) */
 async function loadData(force=false){
   if(!force && sessionStorage.getItem("toolhub-data")){
     data=JSON.parse(sessionStorage.getItem("toolhub-data"));
@@ -253,8 +254,11 @@ async function loadData(force=false){
   data=json.table.rows.map(r=>{
     const url=r.c[i.url]?.v||"";
     const desc=r.c[i.desc]?.v||"";
-    const rawCat=r.c[i.cat]?.v||"";
-    const cat=rawCat.trim()?rawCat:guessCategory(url+" "+desc);
+    const rawCat=(r.c[i.cat]?.v||"").trim().toLowerCase();
+    const generic=["utilities","other",""];
+    const cat=generic.includes(rawCat)
+      ? guessCategory(url+" "+desc)
+      : r.c[i.cat].v;
     return{url,desc,cat,label:r.c[i.label]?.v||"Unknown"};
   }).filter(d=>d.url.startsWith("http"));
 
@@ -289,7 +293,9 @@ function createCard(t){
   card.innerHTML=`
     <span class="star ${fav?"active":""}">★</span>
     <a class="title" href="${t.url}" target="_blank">
-      <img class="favicon" src="https://www.google.com/s2/favicons?sz=32&domain=${safeHostname(t.url)}">
+      <img class="favicon"
+           src="https://www.google.com/s2/favicons?domain=${safeHostname(t.url)}"
+           onerror="this.style.display='none'">
       ${titleFromUrl(t.url)}
     </a>
     <div class="badge ${categoryClass(t.cat)}">${t.cat}</div>
