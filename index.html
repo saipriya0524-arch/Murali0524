@@ -76,13 +76,12 @@ button{background:#444;color:#fff;cursor:pointer;}
   gap:18px;
 }
 
-/* CARD (FIXED SIZE) */
+/* CARD (compact) */
 .card{
   background:var(--card);
   padding:14px;
   border-radius:14px;
   position:relative;
-  min-height:128px; /* FIX */
   transition:.25s;
 }
 .card:hover{
@@ -192,6 +191,8 @@ button{background:#444;color:#fff;cursor:pointer;}
 const SHEET_URL =
 "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json";
 
+const CACHE_KEY = "toolhub-data";
+
 const grid = document.getElementById("grid");
 const favGrid = document.getElementById("favGrid");
 const recentGrid = document.getElementById("recentGrid");
@@ -231,51 +232,48 @@ function guessCategory(text){
   return "Other";
 }
 
-/* LOAD WITH CACHE (CATEGORY FIX APPLIED) */
+/* LOAD (stale-while-revalidate) */
 async function loadData(force=false){
-  if(!force && sessionStorage.getItem("toolhub-data")){
-    data=JSON.parse(sessionStorage.getItem("toolhub-data"));
+  const cached=sessionStorage.getItem(CACHE_KEY);
+  if(cached && !force){
+    data=JSON.parse(cached);
     render();
-    return;
   }
 
-  const res=await fetch(SHEET_URL);
-  const txt=await res.text();
-  const json=JSON.parse(txt.substring(47).slice(0,-2));
+  try{
+    const res=await fetch(SHEET_URL,{cache:"no-store"});
+    const txt=await res.text();
+    const json=JSON.parse(txt.substring(47).slice(0,-2));
 
-  const cols=json.table.cols.map(c=>c.label.toLowerCase());
-  const i={
-    url:cols.indexOf("url"),
-    cat:cols.indexOf("category"),
-    desc:cols.indexOf("description"),
-    label:cols.indexOf("status_label")
-  };
+    const cols=json.table.cols.map(c=>c.label.toLowerCase());
+    const i={
+      url:cols.indexOf("url"),
+      cat:cols.indexOf("category"),
+      desc:cols.indexOf("description"),
+      label:cols.indexOf("status_label")
+    };
 
-  data=json.table.rows.map(r=>{
-    const url=r.c[i.url]?.v||"";
-    const desc=r.c[i.desc]?.v||"";
-    const rawCat=(r.c[i.cat]?.v||"").trim().toLowerCase();
-    const generic=["utilities","other",""];
-    const cat=generic.includes(rawCat)
-      ? guessCategory(url+" "+desc)
-      : r.c[i.cat].v;
-    return{url,desc,cat,label:r.c[i.label]?.v||"Unknown"};
-  }).filter(d=>d.url.startsWith("http"));
+    const fresh=json.table.rows.map(r=>{
+      const url=r.c[i.url]?.v||"";
+      const desc=r.c[i.desc]?.v||"";
+      const raw=(r.c[i.cat]?.v||"").trim();
+      const generic=["utilities","other",""];
+      const cat=generic.includes(raw.toLowerCase())
+        ? guessCategory(url+" "+desc)
+        : raw;
+      return{url,desc,cat,label:r.c[i.label]?.v||"Unknown"};
+    }).filter(d=>d.url.startsWith("http"));
 
-  sessionStorage.setItem("toolhub-data",JSON.stringify(data));
+    if(JSON.stringify(fresh)!==JSON.stringify(data)){
+      data=fresh;
+      sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
+      render();
+    }
 
-  const cats=new Set(data.map(d=>d.cat));
-  categoryFilter.innerHTML='<option value="all">All Categories</option>';
-  [...cats].sort().forEach(c=>{
-    const o=document.createElement("option");
-    o.value=o.textContent=c;
-    categoryFilter.appendChild(o);
-  });
+    document.getElementById("lastUpdated").innerText=
+      "Last updated: "+new Date().toLocaleString();
 
-  document.getElementById("lastUpdated").innerText=
-    "Last updated: "+new Date().toLocaleString();
-
-  render();
+  }catch(e){console.error(e);}
 }
 
 /* CARD */
@@ -295,7 +293,7 @@ function createCard(t){
     <a class="title" href="${t.url}" target="_blank">
       <img class="favicon"
            src="https://www.google.com/s2/favicons?domain=${safeHostname(t.url)}"
-           onerror="this.style.display='none'">
+           onerror="this.remove()">
       ${titleFromUrl(t.url)}
     </a>
     <div class="badge ${categoryClass(t.cat)}">${t.cat}</div>
@@ -332,15 +330,18 @@ function render(){
     return true;
   });
 
-  filtered.filter(t=>favorites.includes(t.url)).forEach(t=>favGrid.appendChild(createCard(t)));
-  recent.map(r=>filtered.find(t=>t.url===r)).filter(Boolean).forEach(t=>recentGrid.appendChild(createCard(t)));
+  filtered.filter(t=>favorites.includes(t.url))
+    .forEach(t=>favGrid.appendChild(createCard(t)));
+  recent.map(r=>filtered.find(t=>t.url===r))
+    .filter(Boolean)
+    .forEach(t=>recentGrid.appendChild(createCard(t)));
   filtered.forEach(t=>grid.appendChild(createCard(t)));
 }
 
 search.oninput=render;
 categoryFilter.onchange=render;
 clearBtn.onclick=()=>{search.value="";categoryFilter.value="all";render();}
-refreshBtn.onclick=()=>{sessionStorage.clear();loadData(true);};
+refreshBtn.onclick=()=>{sessionStorage.removeItem(CACHE_KEY);loadData(true);};
 
 loadData();
 </script>
