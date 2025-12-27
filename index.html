@@ -283,7 +283,7 @@ async function loadData(force=false){
     return;
   }
 
-  const res=await fetch("https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json&tq=select * limit 500";
+  const res=await fetch("https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json&tq=select * limit 250";
 );
   const txt=await res.text();
   const json=JSON.parse(txt.substring(47).slice(0,-2));
@@ -411,5 +411,6 @@ loadData();
 
 </body>
 </html>
+
 
 
