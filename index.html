@@ -183,6 +183,9 @@ footer{
 
 <div class="controls">
   <input id="search" placeholder="Search tools…">
+  <select id="categoryFilter">
+    <option value="all">All Categories</option>
+  </select>
   <button id="clearBtn">Clear</button>
   <button id="refreshBtn">Refresh</button>
 </div>
@@ -219,6 +222,7 @@ const grid=document.getElementById("grid");
 const search=document.getElementById("search");
 const clearBtn=document.getElementById("clearBtn");
 const refreshBtn=document.getElementById("refreshBtn");
+const categoryFilter=document.getElementById("categoryFilter");
 
 let data=[];
 let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
@@ -240,15 +244,16 @@ function guessCategory(text){
   return "Other";
 }
 
-/* LOAD DATA – RELIABLE */
+/* LOAD DATA */
 async function loadData(force=false){
   const cached=sessionStorage.getItem(CACHE_KEY);
   if(cached && !force){
     data=JSON.parse(cached);
+    populateCategories();
     render();
   }
 
-  const res=await fetch(SHEET_URL+"&_ts="+Date.now());
+  const res=await fetch(SHEET_URL);
   const txt=await res.text();
   const json=JSON.parse(txt.substring(47).slice(0,-2));
 
@@ -264,22 +269,38 @@ async function loadData(force=false){
     const url=r.c[i.url]?.v||"";
     const desc=r.c[i.desc]?.v||"";
     const rawCat=(r.c[i.cat]?.v||"").trim();
+
     return{
       url,
       desc,
-      cat:rawCat || guessCategory(url+" "+desc),
+      cat:
+        rawCat &&
+        rawCat.toLowerCase()!=="utilities" &&
+        rawCat.toLowerCase()!=="other"
+          ? rawCat
+          : guessCategory(url+" "+desc),
       label:r.c[i.label]?.v||"Unknown"
     };
   }).filter(d=>d.url.startsWith("http"));
 
-  if(!cached || JSON.stringify(fresh)!==JSON.stringify(data)){
-    data=fresh;
-    sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
-    render();
-  }
+  data=fresh;
+  sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
+  populateCategories();
+  render();
 
   document.getElementById("lastUpdated").textContent=
     "Last updated: "+new Date().toLocaleString();
+}
+
+/* CATEGORY FILTER */
+function populateCategories(){
+  const cats=[...new Set(data.map(d=>d.cat))].sort();
+  categoryFilter.innerHTML='<option value="all">All Categories</option>';
+  cats.forEach(c=>{
+    const o=document.createElement("option");
+    o.value=o.textContent=c;
+    categoryFilter.appendChild(o);
+  });
 }
 
 /* CARD */
@@ -321,14 +342,19 @@ function createCard(t){
 function render(){
   grid.innerHTML="";
   const q=search.value.toLowerCase();
+  const c=categoryFilter.value;
+
   data.filter(t=>{
-    if(q && !t.url.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return false;
+    if(q && !t.url.toLowerCase().includes(q) &&
+        !t.desc.toLowerCase().includes(q)) return false;
+    if(c!=="all" && t.cat!==c) return false;
     return true;
   }).forEach(t=>grid.appendChild(createCard(t)));
 }
 
 search.oninput=render;
-clearBtn.onclick=()=>{search.value="";render();}
+categoryFilter.onchange=render;
+clearBtn.onclick=()=>{search.value="";categoryFilter.value="all";render();}
 refreshBtn.onclick=()=>{sessionStorage.removeItem(CACHE_KEY);loadData(true);};
 
 loadData();
