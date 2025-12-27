@@ -265,7 +265,7 @@ function guessCategory(text){
   return "Other";
 }
 
-/* UNIQUE URL (APPENDED FIX) */
+/* UNIQUE URL */
 function uniqueByUrl(list){
   const seen=new Set();
   return list.filter(item=>{
@@ -282,7 +282,7 @@ async function loadData(force=false){
     data=JSON.parse(cached);
     populateCategories();
     render();
-    return; // ← DATA LOAD FIX (DO NOT REMOVE)
+    return;
   }
 
   const res=await fetch(SHEET_URL);
@@ -301,21 +301,22 @@ async function loadData(force=false){
     const url=r.c[i.url]?.v||"";
     const desc=r.c[i.desc]?.v||"";
     const rawCat=(r.c[i.cat]?.v||"").trim();
-
     return{
       url,
       desc,
-      cat:
-        rawCat &&
-        rawCat.toLowerCase()!=="utilities" &&
-        rawCat.toLowerCase()!=="other"
-          ? rawCat
-          : guessCategory(url+" "+desc),
+      cat:rawCat && rawCat.toLowerCase()!=="utilities"
+        ? rawCat
+        : guessCategory(url+" "+desc),
       label:r.c[i.label]?.v||"Unknown"
     };
   }).filter(d=>d.url.startsWith("http"));
 
-  data=uniqueByUrl(fresh); // ← UNIQUE URL FIX
+  data=uniqueByUrl(fresh);
+
+  /* 🔁 RECENT SYNC FIX (TOP 5) */
+  recent=recent.filter(r=>data.some(d=>d.url===r)).slice(0,5);
+  localStorage.setItem("recent",JSON.stringify(recent));
+
   sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
   populateCategories();
   render();
