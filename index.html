@@ -13,6 +13,7 @@
   --muted:#aaa;
   --accent:#4dabf7;
 }
+
 .light{
   --bg:#eef1f5;
   --card:#ffffff;
@@ -20,6 +21,7 @@
   --muted:#475569;
   --accent:#2563eb;
 }
+
 body{
   margin:0;
   padding:90px 20px 60px;
@@ -44,8 +46,8 @@ body{
 
 /* HEADER */
 header{text-align:center;margin-bottom:28px;}
-header h1{margin:0;font-size:34px;}
-header p{margin-top:8px;font-size:14px;color:var(--muted);}
+header h1{margin:0;font-size:32px;}
+header p{margin:6px 0 0;font-size:14px;color:var(--muted);}
 
 /* CONTROLS */
 .controls{
@@ -53,30 +55,18 @@ header p{margin-top:8px;font-size:14px;color:var(--muted);}
   gap:10px;
   justify-content:center;
   flex-wrap:wrap;
-  position:sticky;
-  top:60px;
-  background:var(--bg);
-  padding:10px 0;
-  z-index:10;
 }
 input,select,button{
   padding:10px 12px;
   border-radius:8px;
   border:none;
 }
-button{
-  background:#444;
-  color:#fff;
-  cursor:pointer;
+.light input,.light select{
+  background:#fff;
+  border:1px solid rgba(15,23,42,.15);
 }
+button{background:#444;color:#fff;cursor:pointer;}
 .light button{background:#2563eb;}
-
-#lastUpdated{
-  margin:18px auto 36px;
-  text-align:center;
-  font-size:12px;
-  opacity:.6;
-}
 
 /* GRID */
 .grid{
@@ -99,30 +89,32 @@ button{
 }
 .card:hover{
   transform:translateY(-5px);
-  box-shadow:0 14px 32px rgba(0,0,0,.4);
+  box-shadow:0 14px 32px rgba(0,0,0,.35);
 }
+
+/* LIGHT MODE CARD FIX */
 .light .card{
+  background:#ffffff;
   border:1px solid rgba(15,23,42,.08);
+  box-shadow:
+    0 1px 2px rgba(15,23,42,.05),
+    0 10px 24px rgba(15,23,42,.12);
 }
 
 /* TITLE */
 .title{
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:8px;
   font-weight:600;
   font-size:14.5px;
   color:var(--accent);
   text-decoration:none;
 }
-
-/* FAVICON */
 .favicon{
-  width:18px;
-  height:18px;
+  width:16px;
+  height:16px;
   border-radius:4px;
-  background:#fff;
-  padding:2px;
 }
 
 /* CATEGORY */
@@ -153,7 +145,6 @@ button{
 /* STATUS */
 .status{
   margin-top:auto;
-  padding-top:6px;
   display:flex;
   align-items:center;
   gap:6px;
@@ -198,9 +189,7 @@ footer{
 
 <div class="controls">
   <input id="search" placeholder="Search tools…">
-  <select id="categoryFilter">
-    <option value="all">All Categories</option>
-  </select>
+  <select id="categoryFilter"><option value="all">All Categories</option></select>
   <button id="clearBtn">Clear</button>
   <button id="refreshBtn">Refresh</button>
 </div>
@@ -213,12 +202,12 @@ footer{
 </div>
 
 <div class="section">
-  <h2>🕒 Recent's</h2>
+  <h2>🕒 Recent</h2>
   <div id="recentGrid" class="grid"></div>
 </div>
 
 <div class="section">
-  <h2>📦 All Tools to Explore</h2>
+  <h2>📦 All Tools</h2>
   <div id="grid" class="grid"></div>
 </div>
 
@@ -228,41 +217,65 @@ footer{
 </footer>
 
 <script>
-/* ================= CONFIG ================= */
 const SHEET_URL =
 "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json&tq=select * limit 500";
 
 const CACHE_KEY="toolhub-data";
 
-/* ================= CATEGORY RULES ================= */
+/* ---------- CATEGORY ENGINE (IMPROVED) ---------- */
 const CATEGORY_RULES=[
  {name:"AI",keywords:["ai","gpt","llm","chatbot","machine learning"]},
- {name:"Image",keywords:["image","photo","design","avatar","illustration"]},
- {name:"Video",keywords:["video","movie","animation","stream"]},
- {name:"Audio",keywords:["audio","music","voice","speech"]},
- {name:"Productivity",keywords:["task","note","doc","pdf","workflow"]},
- {name:"Developer",keywords:["api","sdk","code","github","developer"]},
- {name:"Learning",keywords:["learn","course","tutorial","guide"]},
+ {name:"Image",keywords:["image","photo","design","avatar","illustration","figma","canva"]},
+ {name:"Video",keywords:["video","movie","animation","stream","youtube"]},
+ {name:"Audio",keywords:["audio","music","voice","speech","podcast"]},
+ {name:"Productivity",keywords:["task","note","doc","pdf","workflow","notion"]},
+ {name:"Developer",keywords:["api","sdk","code","github","developer","git"]},
+ {name:"Learning",keywords:["learn","course","tutorial","guide","education"]},
  {name:"Directory",keywords:["directory","list","collection","catalog"]},
  {name:"Community",keywords:["community","forum","discord","slack"]},
- {name:"Marketplace",keywords:["pricing","buy","marketplace","store"]}
+ {name:"Marketplace",keywords:["pricing","buy","store","marketplace"]}
 ];
 
-const GENERIC_CATEGORIES=["utilities","utility","other","misc","general","na","n/a",""];
-
-/* ================= THEME ================= */
-const themeToggle=document.getElementById("themeToggle");
-function applyTheme(t){
-  document.body.classList.toggle("light",t==="light");
-  themeToggle.textContent=t==="light"?"☀️":"🌙";
-  localStorage.setItem("theme",t);
+function normalizeUrl(u){
+  return u.startsWith("http") ? u : "https://" + u;
 }
-applyTheme(localStorage.getItem("theme")||"dark");
-themeToggle.onclick=()=>applyTheme(
-  document.body.classList.contains("light")?"dark":"light"
-);
 
-/* ================= DOM ================= */
+function guessCategorySmart(url,desc){
+  const norm=normalizeUrl(url);
+  let host="",path="";
+  try{
+    const u=new URL(norm);
+    host=u.hostname.replace(/^www\./,"");
+    path=u.pathname;
+  }catch{}
+  const text=(host+" "+path+" "+(desc||"")).toLowerCase();
+
+  let best="Uncategorized",score=0;
+  CATEGORY_RULES.forEach(r=>{
+    let s=0;
+    r.keywords.forEach(k=>{
+      if(host.includes(k)) s+=3;
+      if(text.includes(k)) s+=1;
+    });
+    if(s>score){score=s;best=r.name;}
+  });
+  return best;
+}
+
+/* ---------- THEME ---------- */
+const themeToggle=document.getElementById("themeToggle");
+if(localStorage.getItem("theme")==="light"){
+  document.body.classList.add("light");
+  themeToggle.textContent="☀️";
+}
+themeToggle.onclick=()=>{
+  document.body.classList.toggle("light");
+  const l=document.body.classList.contains("light");
+  localStorage.setItem("theme",l?"light":"dark");
+  themeToggle.textContent=l?"☀️":"🌙";
+};
+
+/* ---------- DOM ---------- */
 const grid=document.getElementById("grid");
 const favGrid=document.getElementById("favGrid");
 const recentGrid=document.getElementById("recentGrid");
@@ -275,167 +288,115 @@ let data=[];
 let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
 let recent=JSON.parse(localStorage.getItem("recent")||"[]");
 
-/* ================= HELPERS ================= */
-function normalizeUrl(url){
-  if(!url) return "";
-  return url.startsWith("http")?url:"https://"+url;
+/* ---------- HELPERS ---------- */
+function titleFromUrl(u){
+ try{return new URL(normalizeUrl(u)).hostname.replace(/^www\./,"").split(".")[0].replace(/^\w/,c=>c.toUpperCase());}
+ catch{return "Link";}
 }
-function host(url){
-  try{return new URL(url).hostname;}catch{return "";}
-}
-function titleFromUrl(url){
-  try{
-    return new URL(url).hostname.replace("www.","").split(".")[0]
-      .replace(/^\w/,c=>c.toUpperCase());
-  }catch{return "Link";}
-}
-function guessCategorySmart(text){
-  const t=text.toLowerCase();
-  let best={name:"Uncategorized",score:0};
-  for(const r of CATEGORY_RULES){
-    let score=0;
-    r.keywords.forEach(k=>{
-      if(t.includes(k)) score+=k.length>=6?2:1;
-    });
-    if(score>best.score) best={name:r.name,score};
-  }
-  return best.score>0?best.name:"Uncategorized";
-}
-function uniqueByUrl(list){
-  const seen=new Set();
-  return list.filter(i=>{
-    if(seen.has(i.url)) return false;
-    seen.add(i.url);
-    return true;
-  });
-}
+function host(u){try{return new URL(normalizeUrl(u)).hostname;}catch{return "";}}
 
-/* ================= LOAD DATA ================= */
+/* ---------- LOAD ---------- */
 async function loadData(force=false){
-  const cached=sessionStorage.getItem(CACHE_KEY);
-  if(cached && !force){
-    data=JSON.parse(cached);
-    populateCategories();
-    render();
-    return;
-  }
-
-  const res=await fetch(SHEET_URL);
-  const txt=await res.text();
-  const json=JSON.parse(txt.substring(47).slice(0,-2));
-
-  const cols=json.table.cols.map(c=>c.label.toLowerCase());
-  const i={
-    url:cols.indexOf("url"),
-    desc:cols.indexOf("description"),
-    cat:cols.indexOf("category"),
-    label:cols.indexOf("status_label")
-  };
-
-  const fresh=json.table.rows.map(r=>{
-    const rawUrl=r.c[i.url]?.v||"";
-    const url=normalizeUrl(rawUrl);
-    const desc=r.c[i.desc]?.v||"";
-    const rawCat=(r.c[i.cat]?.v||"").trim();
-    return{
-      url,
-      desc,
-      cat:rawCat && !GENERIC_CATEGORIES.includes(rawCat.toLowerCase())
-        ? rawCat
-        : guessCategorySmart(url+" "+desc),
-      label:r.c[i.label]?.v||"Unknown"
-    };
-  }).filter(d=>d.url.startsWith("http"));
-
-  data=uniqueByUrl(fresh);
-
-  recent=recent.filter(r=>data.some(d=>d.url===r)).slice(0,5);
-  localStorage.setItem("recent",JSON.stringify(recent));
-
-  sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
+ const cached=sessionStorage.getItem(CACHE_KEY);
+ if(cached && !force){
+  data=JSON.parse(cached);
   populateCategories();
   render();
-
-  document.getElementById("lastUpdated").textContent=
-    "Last updated: "+new Date().toLocaleString();
+  return;
+ }
+ const res=await fetch(SHEET_URL);
+ const txt=await res.text();
+ const json=JSON.parse(txt.substring(47).slice(0,-2));
+ const cols=json.table.cols.map(c=>c.label.toLowerCase());
+ const i={
+  url:cols.indexOf("url"),
+  desc:cols.indexOf("description"),
+  label:cols.indexOf("status_label")
+ };
+ data=json.table.rows.map(r=>{
+  const url=r.c[i.url]?.v||"";
+  const desc=r.c[i.desc]?.v||"";
+  return{
+   url,
+   desc,
+   cat:guessCategorySmart(url,desc),
+   label:r.c[i.label]?.v||"Unknown"
+  };
+ }).filter(d=>d.url);
+ sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
+ populateCategories();
+ render();
+ document.getElementById("lastUpdated").textContent=
+  "Last updated: "+new Date().toLocaleString();
 }
 
-/* ================= CATEGORY FILTER ================= */
+/* ---------- CATEGORY FILTER ---------- */
 function populateCategories(){
-  const cats=[...new Set(data.map(d=>d.cat))].sort();
-  categoryFilter.innerHTML='<option value="all">All Categories</option>';
-  cats.forEach(c=>{
-    const o=document.createElement("option");
-    o.value=o.textContent=c;
-    categoryFilter.appendChild(o);
-  });
+ const cats=[...new Set(data.map(d=>d.cat))].sort();
+ categoryFilter.innerHTML='<option value="all">All Categories</option>';
+ cats.forEach(c=>{
+  const o=document.createElement("option");
+  o.value=o.textContent=c;
+  categoryFilter.appendChild(o);
+ });
 }
 
-/* ================= CARD ================= */
+/* ---------- CARD ---------- */
 function createCard(t){
-  let dot="unknown";
-  const l=t.label.toLowerCase();
-  if(l.includes("working")) dot="working";
-  else if(l.includes("redirect")) dot="redirect";
-  else if(l.includes("blocked")||l.includes("not")) dot="broken";
+ let dot="unknown";
+ const l=t.label.toLowerCase();
+ if(l.includes("working")) dot="working";
+ else if(l.includes("redirect")) dot="redirect";
+ else if(l.includes("blocked")||l.includes("not")) dot="broken";
 
-  const card=document.createElement("div");
-  card.className="card";
-  const fav=favorites.includes(t.url);
+ const card=document.createElement("div");
+ card.className="card";
+ const fav=favorites.includes(t.url);
 
-  card.innerHTML=`
-    <span class="star ${fav?"active":""}">★</span>
-    <a class="title" href="${t.url}" target="_blank">
-      <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host(t.url)}">
-      ${titleFromUrl(t.url)}
-    </a>
-    <div class="badge">${t.cat}</div>
-    <div class="desc">${t.desc}</div>
-    <div class="status"><span class="dot ${dot}"></span>${t.label}</div>
-  `;
+ card.innerHTML=`
+  <span class="star ${fav?"active":""}">★</span>
+  <a class="title" href="${normalizeUrl(t.url)}" target="_blank">
+   <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host(t.url)}">
+   ${titleFromUrl(t.url)}
+  </a>
+  <div class="badge">${t.cat}</div>
+  <div class="desc">${t.desc}</div>
+  <div class="status"><span class="dot ${dot}"></span>${t.label}</div>
+ `;
 
-  card.querySelector(".star").onclick=e=>{
-    e.stopPropagation();
-    fav?favorites=favorites.filter(f=>f!==t.url):favorites.push(t.url);
-    localStorage.setItem("favorites",JSON.stringify(favorites));
-    render();
-  };
+ card.querySelector(".star").onclick=e=>{
+  e.stopPropagation();
+  fav?favorites=favorites.filter(f=>f!==t.url):favorites.push(t.url);
+  localStorage.setItem("favorites",JSON.stringify(favorites));
+  render();
+ };
 
-  card.querySelector(".title").onclick=()=>{
-    recent=recent.filter(r=>r!==t.url);
-    recent.unshift(t.url);
-    recent=recent.slice(0,5);
-    localStorage.setItem("recent",JSON.stringify(recent));
-    render();
-  };
+ card.querySelector(".title").onclick=()=>{
+  recent=recent.filter(r=>r!==t.url);
+  recent.unshift(t.url);
+  recent=recent.slice(0,5);
+  localStorage.setItem("recent",JSON.stringify(recent));
+  render();
+ };
 
-  return card;
+ return card;
 }
 
-/* ================= RENDER ================= */
+/* ---------- RENDER ---------- */
 function render(){
-  grid.innerHTML="";
-  favGrid.innerHTML="";
-  recentGrid.innerHTML="";
+ grid.innerHTML=favGrid.innerHTML=recentGrid.innerHTML="";
+ const q=search.value.toLowerCase();
+ const c=categoryFilter.value;
 
-  const q=search.value.toLowerCase();
-  const c=categoryFilter.value;
+ const filtered=data.filter(t=>{
+  if(q && !t.url.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return false;
+  if(c!=="all" && t.cat!==c) return false;
+  return true;
+ });
 
-  const filtered=data.filter(t=>{
-    if(q && !t.url.toLowerCase().includes(q) &&
-       !t.desc.toLowerCase().includes(q)) return false;
-    if(c!=="all" && t.cat!==c) return false;
-    return true;
-  });
-
-  filtered.filter(t=>favorites.includes(t.url))
-    .forEach(t=>favGrid.appendChild(createCard(t)));
-
-  recent.map(r=>filtered.find(t=>t.url===r))
-    .filter(Boolean)
-    .forEach(t=>recentGrid.appendChild(createCard(t)));
-
-  filtered.forEach(t=>grid.appendChild(createCard(t)));
+ filtered.filter(t=>favorites.includes(t.url)).forEach(t=>favGrid.appendChild(createCard(t)));
+ recent.map(r=>filtered.find(t=>t.url===r)).filter(Boolean).forEach(t=>recentGrid.appendChild(createCard(t)));
+ filtered.forEach(t=>grid.appendChild(createCard(t)));
 }
 
 search.oninput=render;
