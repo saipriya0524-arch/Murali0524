@@ -53,13 +53,22 @@ header p{margin-top:8px;font-size:14px;color:var(--muted);}
   gap:10px;
   justify-content:center;
   flex-wrap:wrap;
+  position:sticky;
+  top:60px;
+  background:var(--bg);
+  padding:10px 0;
+  z-index:10;
 }
 input,select,button{
   padding:10px 12px;
   border-radius:8px;
   border:none;
 }
-button{background:#444;color:#fff;cursor:pointer;}
+button{
+  background:#444;
+  color:#fff;
+  cursor:pointer;
+}
 .light button{background:#2563eb;}
 
 #lastUpdated{
@@ -68,10 +77,6 @@ button{background:#444;color:#fff;cursor:pointer;}
   font-size:12px;
   opacity:.6;
 }
-
-/* SECTIONS */
-.section{margin-bottom:46px;}
-.section h2{margin-bottom:16px;font-size:18px;}
 
 /* GRID */
 .grid{
@@ -90,7 +95,7 @@ button{background:#444;color:#fff;cursor:pointer;}
   gap:6px;
   min-height:140px;
   position:relative;
-  transition:transform .25s ease, box-shadow .25s ease;
+  transition:.25s;
 }
 .card:hover{
   transform:translateY(-5px);
@@ -98,23 +103,26 @@ button{background:#444;color:#fff;cursor:pointer;}
 }
 .light .card{
   border:1px solid rgba(15,23,42,.08);
-  box-shadow:0 6px 18px rgba(0,0,0,.08);
 }
 
 /* TITLE */
 .title{
   display:flex;
   align-items:center;
-  gap:8px;
+  gap:10px;
   font-weight:600;
   font-size:14.5px;
   color:var(--accent);
   text-decoration:none;
 }
+
+/* FAVICON */
 .favicon{
-  width:16px;
-  height:16px;
+  width:18px;
+  height:18px;
   border-radius:4px;
+  background:#fff;
+  padding:2px;
 }
 
 /* CATEGORY */
@@ -145,6 +153,7 @@ button{background:#444;color:#fff;cursor:pointer;}
 /* STATUS */
 .status{
   margin-top:auto;
+  padding-top:6px;
   display:flex;
   align-items:center;
   gap:6px;
@@ -204,7 +213,7 @@ footer{
 </div>
 
 <div class="section">
-  <h2>🕒 Recent</h2>
+  <h2>🕒 Recent's</h2>
   <div id="recentGrid" class="grid"></div>
 </div>
 
@@ -214,63 +223,46 @@ footer{
 </div>
 
 <footer>
-  All Credit to Murali | All Rights Reserved © 2025-26<br>
+  All Credit to Murali | All Rights Reserved © 2025–26<br>
   Disclaimer: We are not responsible for any data loss, misuse, or external service changes.
 </footer>
 
 <script>
+/* ================= CONFIG ================= */
 const SHEET_URL =
-"https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json&tq=select * limit 250";
+"https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json&tq=select * limit 500";
 
 const CACHE_KEY="toolhub-data";
 
-/* URL NORMALIZATION */
-function normalizeUrl(url){
-  if(!url) return "";
-  if(/^https?:\/\//i.test(url)) return url;
-  return "https://" + url;
-}
-function host(url){
-  try{return new URL(normalizeUrl(url)).hostname;}catch{return "";}
-}
-function titleFromUrl(url){
-  try{
-    return new URL(normalizeUrl(url)).hostname
-      .replace("www.","").split(".")[0]
-      .replace(/^\w/,c=>c.toUpperCase());
-  }catch{return "Link";}
-}
-
-/* CATEGORY RULES */
-const CATEGORY_RULES = [
-  { name:"AI", keywords:["ai","gpt","llm","chatbot","machine learning"] },
-  { name:"Image", keywords:["image","photo","design","avatar","illustration"] },
-  { name:"Video", keywords:["video","movie","animation","stream"] },
-  { name:"Audio", keywords:["audio","music","voice","speech"] },
-  { name:"Productivity", keywords:["task","note","doc","pdf","workflow"] },
-  { name:"Developer", keywords:["api","sdk","code","github","developer"] },
-  { name:"Learning", keywords:["learn","course","tutorial","guide"] },
-  { name:"Directory", keywords:["directory","list","collection","catalog"] },
-  { name:"Community", keywords:["community","forum","discord","slack"] },
-  { name:"Marketplace", keywords:["pricing","buy","marketplace","store"] }
+/* ================= CATEGORY RULES ================= */
+const CATEGORY_RULES=[
+ {name:"AI",keywords:["ai","gpt","llm","chatbot","machine learning"]},
+ {name:"Image",keywords:["image","photo","design","avatar","illustration"]},
+ {name:"Video",keywords:["video","movie","animation","stream"]},
+ {name:"Audio",keywords:["audio","music","voice","speech"]},
+ {name:"Productivity",keywords:["task","note","doc","pdf","workflow"]},
+ {name:"Developer",keywords:["api","sdk","code","github","developer"]},
+ {name:"Learning",keywords:["learn","course","tutorial","guide"]},
+ {name:"Directory",keywords:["directory","list","collection","catalog"]},
+ {name:"Community",keywords:["community","forum","discord","slack"]},
+ {name:"Marketplace",keywords:["pricing","buy","marketplace","store"]}
 ];
 
 const GENERIC_CATEGORIES=["utilities","utility","other","misc","general","na","n/a",""];
 
-function guessCategorySmart(text){
-  const t=text.toLowerCase();
-  for(const r of CATEGORY_RULES){
-    let hits=0;
-    r.keywords.forEach(k=>{if(t.includes(k)) hits++;});
-    if(hits>=2) return r.name;
-  }
-  for(const r of CATEGORY_RULES){
-    if(r.keywords.some(k=>t.includes(k))) return r.name;
-  }
-  return "Uncategorized";
+/* ================= THEME ================= */
+const themeToggle=document.getElementById("themeToggle");
+function applyTheme(t){
+  document.body.classList.toggle("light",t==="light");
+  themeToggle.textContent=t==="light"?"☀️":"🌙";
+  localStorage.setItem("theme",t);
 }
+applyTheme(localStorage.getItem("theme")||"dark");
+themeToggle.onclick=()=>applyTheme(
+  document.body.classList.contains("light")?"dark":"light"
+);
 
-/* DOM */
+/* ================= DOM ================= */
 const grid=document.getElementById("grid");
 const favGrid=document.getElementById("favGrid");
 const recentGrid=document.getElementById("recentGrid");
@@ -283,7 +275,42 @@ let data=[];
 let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
 let recent=JSON.parse(localStorage.getItem("recent")||"[]");
 
-/* LOAD DATA */
+/* ================= HELPERS ================= */
+function normalizeUrl(url){
+  if(!url) return "";
+  return url.startsWith("http")?url:"https://"+url;
+}
+function host(url){
+  try{return new URL(url).hostname;}catch{return "";}
+}
+function titleFromUrl(url){
+  try{
+    return new URL(url).hostname.replace("www.","").split(".")[0]
+      .replace(/^\w/,c=>c.toUpperCase());
+  }catch{return "Link";}
+}
+function guessCategorySmart(text){
+  const t=text.toLowerCase();
+  let best={name:"Uncategorized",score:0};
+  for(const r of CATEGORY_RULES){
+    let score=0;
+    r.keywords.forEach(k=>{
+      if(t.includes(k)) score+=k.length>=6?2:1;
+    });
+    if(score>best.score) best={name:r.name,score};
+  }
+  return best.score>0?best.name:"Uncategorized";
+}
+function uniqueByUrl(list){
+  const seen=new Set();
+  return list.filter(i=>{
+    if(seen.has(i.url)) return false;
+    seen.add(i.url);
+    return true;
+  });
+}
+
+/* ================= LOAD DATA ================= */
 async function loadData(force=false){
   const cached=sessionStorage.getItem(CACHE_KEY);
   if(cached && !force){
@@ -305,23 +332,25 @@ async function loadData(force=false){
     label:cols.indexOf("status_label")
   };
 
-  data=json.table.rows.map(r=>{
-    const url=r.c[i.url]?.v||"";
+  const fresh=json.table.rows.map(r=>{
+    const rawUrl=r.c[i.url]?.v||"";
+    const url=normalizeUrl(rawUrl);
     const desc=r.c[i.desc]?.v||"";
     const rawCat=(r.c[i.cat]?.v||"").trim();
-
-    const finalCat =
-      rawCat && !GENERIC_CATEGORIES.includes(rawCat.toLowerCase())
-        ? rawCat
-        : guessCategorySmart(url+" "+desc);
-
     return{
       url,
       desc,
-      cat:finalCat,
+      cat:rawCat && !GENERIC_CATEGORIES.includes(rawCat.toLowerCase())
+        ? rawCat
+        : guessCategorySmart(url+" "+desc),
       label:r.c[i.label]?.v||"Unknown"
     };
-  }).filter(d=>d.url);
+  }).filter(d=>d.url.startsWith("http"));
+
+  data=uniqueByUrl(fresh);
+
+  recent=recent.filter(r=>data.some(d=>d.url===r)).slice(0,5);
+  localStorage.setItem("recent",JSON.stringify(recent));
 
   sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
   populateCategories();
@@ -331,7 +360,7 @@ async function loadData(force=false){
     "Last updated: "+new Date().toLocaleString();
 }
 
-/* CATEGORY FILTER */
+/* ================= CATEGORY FILTER ================= */
 function populateCategories(){
   const cats=[...new Set(data.map(d=>d.cat))].sort();
   categoryFilter.innerHTML='<option value="all">All Categories</option>';
@@ -342,7 +371,7 @@ function populateCategories(){
   });
 }
 
-/* CARD */
+/* ================= CARD ================= */
 function createCard(t){
   let dot="unknown";
   const l=t.label.toLowerCase();
@@ -356,10 +385,8 @@ function createCard(t){
 
   card.innerHTML=`
     <span class="star ${fav?"active":""}">★</span>
-    <a class="title" href="${normalizeUrl(t.url)}" target="_blank">
-      <img class="favicon"
-        src="https://www.google.com/s2/favicons?domain=${host(t.url)}"
-        onerror="this.remove()">
+    <a class="title" href="${t.url}" target="_blank">
+      <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host(t.url)}">
       ${titleFromUrl(t.url)}
     </a>
     <div class="badge">${t.cat}</div>
@@ -385,7 +412,7 @@ function createCard(t){
   return card;
 }
 
-/* RENDER */
+/* ================= RENDER ================= */
 function render(){
   grid.innerHTML="";
   favGrid.innerHTML="";
