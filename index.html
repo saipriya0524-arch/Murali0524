@@ -265,6 +265,16 @@ function guessCategory(text){
   return "Other";
 }
 
+/* UNIQUE URL (APPENDED FIX) */
+function uniqueByUrl(list){
+  const seen=new Set();
+  return list.filter(item=>{
+    if(seen.has(item.url)) return false;
+    seen.add(item.url);
+    return true;
+  });
+}
+
 /* LOAD DATA */
 async function loadData(force=false){
   const cached=sessionStorage.getItem(CACHE_KEY);
@@ -272,6 +282,7 @@ async function loadData(force=false){
     data=JSON.parse(cached);
     populateCategories();
     render();
+    return; // ← DATA LOAD FIX (DO NOT REMOVE)
   }
 
   const res=await fetch(SHEET_URL);
@@ -304,7 +315,7 @@ async function loadData(force=false){
     };
   }).filter(d=>d.url.startsWith("http"));
 
-  data=fresh;
+  data=uniqueByUrl(fresh); // ← UNIQUE URL FIX
   sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
   populateCategories();
   render();
@@ -337,5 +348,68 @@ function createCard(t){
   const fav=favorites.includes(t.url);
 
   card.innerHTML=`
-    <span class="st
+    <span class="star ${fav?"active":""}">★</span>
+    <a class="title" href="${t.url}" target="_blank">
+      <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host(t.url)}" onerror="this.remove()">
+      ${titleFromUrl(t.url)}
+    </a>
+    <div class="badge">${t.cat}</div>
+    <div class="desc">${t.desc}</div>
+    <div class="status">
+      <span class="dot ${dot}"></span>${t.label}
+    </div>
+  `;
 
+  card.querySelector(".star").onclick=e=>{
+    e.stopPropagation();
+    fav?favorites=favorites.filter(f=>f!==t.url):favorites.push(t.url);
+    localStorage.setItem("favorites",JSON.stringify(favorites));
+    render();
+  };
+
+  card.querySelector(".title").onclick=()=>{
+    recent=recent.filter(r=>r!==t.url);
+    recent.unshift(t.url);
+    recent=recent.slice(0,5);
+    localStorage.setItem("recent",JSON.stringify(recent));
+  };
+
+  return card;
+}
+
+/* RENDER */
+function render(){
+  grid.innerHTML="";
+  favGrid.innerHTML="";
+  recentGrid.innerHTML="";
+
+  const q=search.value.toLowerCase();
+  const c=categoryFilter.value;
+
+  const filtered=data.filter(t=>{
+    if(q && !t.url.toLowerCase().includes(q) &&
+        !t.desc.toLowerCase().includes(q)) return false;
+    if(c!=="all" && t.cat!==c) return false;
+    return true;
+  });
+
+  filtered.filter(t=>favorites.includes(t.url))
+    .forEach(t=>favGrid.appendChild(createCard(t)));
+
+  recent.map(r=>filtered.find(t=>t.url===r))
+    .filter(Boolean)
+    .forEach(t=>recentGrid.appendChild(createCard(t)));
+
+  filtered.forEach(t=>grid.appendChild(createCard(t)));
+}
+
+search.oninput=render;
+categoryFilter.onchange=render;
+clearBtn.onclick=()=>{search.value="";categoryFilter.value="all";render();}
+refreshBtn.onclick=()=>{sessionStorage.removeItem(CACHE_KEY);loadData(true);};
+
+loadData();
+</script>
+
+</body>
+</html>
