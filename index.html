@@ -68,6 +68,10 @@ button{background:#444;color:#fff;cursor:pointer;}
   opacity:.6;
 }
 
+/* SECTIONS */
+.section{margin-bottom:46px;}
+.section h2{margin-bottom:16px;font-size:18px;}
+
 /* GRID */
 .grid{
   display:grid;
@@ -192,7 +196,20 @@ footer{
 
 <div id="lastUpdated"></div>
 
-<div class="grid" id="grid"></div>
+<div class="section">
+  <h2>⭐ Favorites</h2>
+  <div id="favGrid" class="grid"></div>
+</div>
+
+<div class="section">
+  <h2>🕒 Recent</h2>
+  <div id="recentGrid" class="grid"></div>
+</div>
+
+<div class="section">
+  <h2>📦 All Tools</h2>
+  <div id="grid" class="grid"></div>
+</div>
 
 <footer>
   All Credit to Murali | All Rights Reserved © 2026<br>
@@ -218,7 +235,10 @@ themeToggle.onclick=()=>{
   themeToggle.textContent=isLight?"☀️":"🌙";
 };
 
+/* DOM */
 const grid=document.getElementById("grid");
+const favGrid=document.getElementById("favGrid");
+const recentGrid=document.getElementById("recentGrid");
 const search=document.getElementById("search");
 const clearBtn=document.getElementById("clearBtn");
 const refreshBtn=document.getElementById("refreshBtn");
@@ -226,6 +246,7 @@ const categoryFilter=document.getElementById("categoryFilter");
 
 let data=[];
 let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
+let recent=JSON.parse(localStorage.getItem("recent")||"[]");
 
 /* HELPERS */
 function titleFromUrl(url){
@@ -316,49 +337,5 @@ function createCard(t){
   const fav=favorites.includes(t.url);
 
   card.innerHTML=`
-    <span class="star ${fav?"active":""}">★</span>
-    <a class="title" href="${t.url}" target="_blank">
-      <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host(t.url)}" onerror="this.remove()">
-      ${titleFromUrl(t.url)}
-    </a>
-    <div class="badge">${t.cat}</div>
-    <div class="desc">${t.desc}</div>
-    <div class="status">
-      <span class="dot ${dot}"></span>${t.label}
-    </div>
-  `;
+    <span class="st
 
-  card.querySelector(".star").onclick=e=>{
-    e.stopPropagation();
-    fav?favorites=favorites.filter(f=>f!==t.url):favorites.push(t.url);
-    localStorage.setItem("favorites",JSON.stringify(favorites));
-    render();
-  };
-
-  return card;
-}
-
-/* RENDER */
-function render(){
-  grid.innerHTML="";
-  const q=search.value.toLowerCase();
-  const c=categoryFilter.value;
-
-  data.filter(t=>{
-    if(q && !t.url.toLowerCase().includes(q) &&
-        !t.desc.toLowerCase().includes(q)) return false;
-    if(c!=="all" && t.cat!==c) return false;
-    return true;
-  }).forEach(t=>grid.appendChild(createCard(t)));
-}
-
-search.oninput=render;
-categoryFilter.onchange=render;
-clearBtn.onclick=()=>{search.value="";categoryFilter.value="all";render();}
-refreshBtn.onclick=()=>{sessionStorage.removeItem(CACHE_KEY);loadData(true);};
-
-loadData();
-</script>
-
-</body>
-</html>
