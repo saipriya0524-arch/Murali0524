@@ -14,10 +14,10 @@
   --accent:#4dabf7;
 }
 .light{
-  --bg:#f2f4f7;
-  --card:#f8fafc;
-  --text:#111;
-  --muted:#555;
+  --bg:#eef1f5;
+  --card:#ffffff;
+  --text:#0f172a;
+  --muted:#475569;
   --accent:#2563eb;
 }
 body{
@@ -44,8 +44,8 @@ body{
 
 /* HEADER */
 header{text-align:center;margin-bottom:28px;}
-header h1{margin:0;font-size:32px;}
-header p{margin:6px 0 0;font-size:14px;color:var(--muted);}
+header h1{margin:0;font-size:34px;}
+header p{margin-top:8px;font-size:14px;color:var(--muted);}
 
 /* CONTROLS */
 .controls{
@@ -60,6 +60,7 @@ input,select,button{
   border:none;
 }
 button{background:#444;color:#fff;cursor:pointer;}
+.light button{background:#2563eb;}
 
 #lastUpdated{
   margin:18px auto 36px;
@@ -96,10 +97,11 @@ button{background:#444;color:#fff;cursor:pointer;}
   box-shadow:0 14px 32px rgba(0,0,0,.4);
 }
 .light .card{
+  border:1px solid rgba(15,23,42,.08);
   box-shadow:0 6px 18px rgba(0,0,0,.08);
 }
 
-/* CONTENT */
+/* TITLE */
 .title{
   display:flex;
   align-items:center;
@@ -110,9 +112,9 @@ button{background:#444;color:#fff;cursor:pointer;}
   text-decoration:none;
 }
 .favicon{
-  width:14px;
-  height:14px;
-  border-radius:50%;
+  width:16px;
+  height:16px;
+  border-radius:4px;
 }
 
 /* CATEGORY */
@@ -143,7 +145,6 @@ button{background:#444;color:#fff;cursor:pointer;}
 /* STATUS */
 .status{
   margin-top:auto;
-  padding-top:6px;
   display:flex;
   align-items:center;
   gap:6px;
@@ -174,12 +175,6 @@ footer{
   color:var(--muted);
   line-height:1.6;
 }
-
-/* MOBILE */
-@media(max-width:640px){
-  body{padding:90px 12px 50px;}
-  header h1{font-size:26px;}
-}
 </style>
 </head>
 
@@ -209,7 +204,7 @@ footer{
 </div>
 
 <div class="section">
-  <h2>🕒 Recent's</h2>
+  <h2>🕒 Recent</h2>
   <div id="recentGrid" class="grid"></div>
 </div>
 
@@ -225,65 +220,68 @@ footer{
 
 <script>
 const SHEET_URL =
-"https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json&tq=select * limit 500";
+"https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json&tq=select * limit 250";
 
 const CACHE_KEY="toolhub-data";
 
-/* THEME */
-const themeToggle=document.getElementById("themeToggle");
-if(localStorage.getItem("theme")==="light"){
-  document.body.classList.add("light");
-  themeToggle.textContent="☀️";
+/* URL NORMALIZATION */
+function normalizeUrl(url){
+  if(!url) return "";
+  if(/^https?:\/\//i.test(url)) return url;
+  return "https://" + url;
 }
-themeToggle.onclick=()=>{
-  document.body.classList.toggle("light");
-  const isLight=document.body.classList.contains("light");
-  localStorage.setItem("theme",isLight?"light":"dark");
-  themeToggle.textContent=isLight?"☀️":"🌙";
-};
+function host(url){
+  try{return new URL(normalizeUrl(url)).hostname;}catch{return "";}
+}
+function titleFromUrl(url){
+  try{
+    return new URL(normalizeUrl(url)).hostname
+      .replace("www.","").split(".")[0]
+      .replace(/^\w/,c=>c.toUpperCase());
+  }catch{return "Link";}
+}
+
+/* CATEGORY RULES */
+const CATEGORY_RULES = [
+  { name:"AI", keywords:["ai","gpt","llm","chatbot","machine learning"] },
+  { name:"Image", keywords:["image","photo","design","avatar","illustration"] },
+  { name:"Video", keywords:["video","movie","animation","stream"] },
+  { name:"Audio", keywords:["audio","music","voice","speech"] },
+  { name:"Productivity", keywords:["task","note","doc","pdf","workflow"] },
+  { name:"Developer", keywords:["api","sdk","code","github","developer"] },
+  { name:"Learning", keywords:["learn","course","tutorial","guide"] },
+  { name:"Directory", keywords:["directory","list","collection","catalog"] },
+  { name:"Community", keywords:["community","forum","discord","slack"] },
+  { name:"Marketplace", keywords:["pricing","buy","marketplace","store"] }
+];
+
+const GENERIC_CATEGORIES=["utilities","utility","other","misc","general","na","n/a",""];
+
+function guessCategorySmart(text){
+  const t=text.toLowerCase();
+  for(const r of CATEGORY_RULES){
+    let hits=0;
+    r.keywords.forEach(k=>{if(t.includes(k)) hits++;});
+    if(hits>=2) return r.name;
+  }
+  for(const r of CATEGORY_RULES){
+    if(r.keywords.some(k=>t.includes(k))) return r.name;
+  }
+  return "Uncategorized";
+}
 
 /* DOM */
 const grid=document.getElementById("grid");
 const favGrid=document.getElementById("favGrid");
 const recentGrid=document.getElementById("recentGrid");
 const search=document.getElementById("search");
+const categoryFilter=document.getElementById("categoryFilter");
 const clearBtn=document.getElementById("clearBtn");
 const refreshBtn=document.getElementById("refreshBtn");
-const categoryFilter=document.getElementById("categoryFilter");
 
 let data=[];
 let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
 let recent=JSON.parse(localStorage.getItem("recent")||"[]");
-
-/* HELPERS */
-function normalizeUrl(url){
-  if(!url) return "";
-  if(/^https?:\/\//i.test(url)) return url;
-  return "https://" + url;
-}
-function titleFromUrl(url){
-  try{return new URL(normalizeUrl(url)).hostname.replace("www.","").split(".")[0].replace(/^\w/,c=>c.toUpperCase());}
-  catch{return "Link";}
-}
-function host(url){
-  try{return new URL(normalizeUrl(url)).hostname;}catch{return "";}
-}
-function guessCategory(text){
-  text=text.toLowerCase();
-  if(/ai|gpt|llm/.test(text)) return "AI";
-  if(/image|photo/.test(text)) return "Image";
-  if(/video|game/.test(text)) return "Video";
-  if(/pdf|ebook|doc/.test(text)) return "Productivity";
-  return "Other";
-}
-function uniqueByUrl(list){
-  const seen=new Set();
-  return list.filter(i=>{
-    if(seen.has(i.url)) return false;
-    seen.add(i.url);
-    return true;
-  });
-}
 
 /* LOAD DATA */
 async function loadData(force=false){
@@ -307,24 +305,23 @@ async function loadData(force=false){
     label:cols.indexOf("status_label")
   };
 
-  const fresh=json.table.rows.map(r=>{
+  data=json.table.rows.map(r=>{
     const url=r.c[i.url]?.v||"";
     const desc=r.c[i.desc]?.v||"";
     const rawCat=(r.c[i.cat]?.v||"").trim();
+
+    const finalCat =
+      rawCat && !GENERIC_CATEGORIES.includes(rawCat.toLowerCase())
+        ? rawCat
+        : guessCategorySmart(url+" "+desc);
+
     return{
       url,
       desc,
-      cat:rawCat && rawCat.toLowerCase()!=="utilities"
-        ? rawCat
-        : guessCategory(url+" "+desc),
+      cat:finalCat,
       label:r.c[i.label]?.v||"Unknown"
     };
   }).filter(d=>d.url);
-
-  data=uniqueByUrl(fresh);
-
-  recent=recent.filter(r=>data.some(d=>d.url===r)).slice(0,5);
-  localStorage.setItem("recent",JSON.stringify(recent));
 
   sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
   populateCategories();
@@ -360,7 +357,9 @@ function createCard(t){
   card.innerHTML=`
     <span class="star ${fav?"active":""}">★</span>
     <a class="title" href="${normalizeUrl(t.url)}" target="_blank">
-      <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host(t.url)}" onerror="this.remove()">
+      <img class="favicon"
+        src="https://www.google.com/s2/favicons?domain=${host(t.url)}"
+        onerror="this.remove()">
       ${titleFromUrl(t.url)}
     </a>
     <div class="badge">${t.cat}</div>
@@ -422,4 +421,3 @@ loadData();
 
 </body>
 </html>
-
