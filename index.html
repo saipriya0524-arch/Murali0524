@@ -15,7 +15,7 @@
 }
 .light{
   --bg:#f2f4f7;
-  --card:#ffffff;
+  --card:#f8fafc;
   --text:#111;
   --muted:#555;
   --accent:#2563eb;
@@ -95,6 +95,9 @@ button{background:#444;color:#fff;cursor:pointer;}
   transform:translateY(-5px);
   box-shadow:0 14px 32px rgba(0,0,0,.4);
 }
+.light .card{
+  box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
 
 /* CONTENT */
 .title{
@@ -120,6 +123,10 @@ button{background:#444;color:#fff;cursor:pointer;}
   border-radius:999px;
   background:#2a2a2a;
   color:#cfe6ff;
+}
+.light .badge{
+  background:#e5edff;
+  color:#1e3a8a;
 }
 
 /* DESCRIPTION */
@@ -212,7 +219,7 @@ footer{
 </div>
 
 <footer>
-  All Credit to Murali | All Rights Reserved © 2025-26 <br>
+  All Credit to Murali | All Rights Reserved © 2025-26<br>
   Disclaimer: We are not responsible for any data loss, misuse, or external service changes.
 </footer>
 
@@ -249,12 +256,17 @@ let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
 let recent=JSON.parse(localStorage.getItem("recent")||"[]");
 
 /* HELPERS */
+function normalizeUrl(url){
+  if(!url) return "";
+  if(/^https?:\/\//i.test(url)) return url;
+  return "https://" + url;
+}
 function titleFromUrl(url){
-  try{return new URL(url).hostname.replace("www.","").split(".")[0].replace(/^\w/,c=>c.toUpperCase());}
+  try{return new URL(normalizeUrl(url)).hostname.replace("www.","").split(".")[0].replace(/^\w/,c=>c.toUpperCase());}
   catch{return "Link";}
 }
 function host(url){
-  try{return new URL(url).hostname;}catch{return "";}
+  try{return new URL(normalizeUrl(url)).hostname;}catch{return "";}
 }
 function guessCategory(text){
   text=text.toLowerCase();
@@ -283,9 +295,9 @@ async function loadData(force=false){
     return;
   }
 
-  const res = await fetch(SHEET_URL);
-  const txt = await res.text();
-  const json = JSON.parse(txt.substring(47).slice(0,-2));
+  const res=await fetch(SHEET_URL);
+  const txt=await res.text();
+  const json=JSON.parse(txt.substring(47).slice(0,-2));
 
   const cols=json.table.cols.map(c=>c.label.toLowerCase());
   const i={
@@ -307,7 +319,7 @@ async function loadData(force=false){
         : guessCategory(url+" "+desc),
       label:r.c[i.label]?.v||"Unknown"
     };
-  }).filter(d=>d.url.startsWith("http"));
+  }).filter(d=>d.url);
 
   data=uniqueByUrl(fresh);
 
@@ -347,7 +359,7 @@ function createCard(t){
 
   card.innerHTML=`
     <span class="star ${fav?"active":""}">★</span>
-    <a class="title" href="${t.url}" target="_blank">
+    <a class="title" href="${normalizeUrl(t.url)}" target="_blank">
       <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host(t.url)}" onerror="this.remove()">
       ${titleFromUrl(t.url)}
     </a>
