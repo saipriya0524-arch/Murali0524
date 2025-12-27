@@ -28,7 +28,7 @@ body{
   color:var(--text);
 }
 
-/* THEME TOGGLE */
+/* THEME */
 #themeToggle{
   position:fixed;
   top:16px;
@@ -37,27 +37,15 @@ body{
   height:44px;
   border-radius:50%;
   border:none;
-  font-size:18px;
   cursor:pointer;
   background:var(--card);
   color:var(--text);
 }
 
 /* HEADER */
-header{
-  text-align:center;
-  margin-bottom:28px;
-}
-header h1{
-  margin:0;
-  font-size:32px;
-  letter-spacing:.5px;
-}
-header p{
-  margin:6px 0 0;
-  font-size:14px;
-  color:var(--muted);
-}
+header{text-align:center;margin-bottom:28px;}
+header h1{margin:0;font-size:32px;}
+header p{margin:6px 0 0;font-size:14px;color:var(--muted);}
 
 /* CONTROLS */
 .controls{
@@ -80,10 +68,6 @@ button{background:#444;color:#fff;cursor:pointer;}
   opacity:.6;
 }
 
-/* SECTIONS */
-.section{margin-bottom:46px;}
-.section h2{margin-bottom:16px;font-size:18px;}
-
 /* GRID */
 .grid{
   display:grid;
@@ -96,12 +80,16 @@ button{background:#444;color:#fff;cursor:pointer;}
   background:var(--card);
   padding:14px;
   border-radius:14px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-height:140px;
   position:relative;
   transition:transform .25s ease, box-shadow .25s ease;
 }
 .card:hover{
-  transform:translateY(-6px);
-  box-shadow:0 14px 32px rgba(0,0,0,.45);
+  transform:translateY(-5px);
+  box-shadow:0 14px 32px rgba(0,0,0,.4);
 }
 
 /* CONTENT */
@@ -110,6 +98,7 @@ button{background:#444;color:#fff;cursor:pointer;}
   align-items:center;
   gap:8px;
   font-weight:600;
+  font-size:14.5px;
   color:var(--accent);
   text-decoration:none;
 }
@@ -118,20 +107,34 @@ button{background:#444;color:#fff;cursor:pointer;}
   height:14px;
   border-radius:50%;
 }
-.desc{color:var(--muted);margin:6px 0;}
+
+/* CATEGORY */
 .badge{
+  align-self:flex-start;
   font-size:11px;
-  padding:4px 10px;
+  padding:3px 10px;
   border-radius:999px;
-  display:inline-block;
+  background:#2a2a2a;
+  color:#cfe6ff;
+}
+
+/* DESCRIPTION */
+.desc{
+  font-size:12.5px;
+  color:var(--muted);
+  line-height:1.35;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
 }
 
 /* STATUS */
 .status{
-  position:absolute;
-  bottom:12px;
-  right:12px;
+  margin-top:auto;
+  padding-top:6px;
   display:flex;
+  align-items:center;
   gap:6px;
   font-size:12px;
 }
@@ -175,32 +178,18 @@ footer{
 
 <header>
   <h1>ToolStack</h1>
-  <p>Curated tools. Live status. Smarter discovery.</p>
+  <p>Curated tools · Live status · Smart discovery</p>
 </header>
 
 <div class="controls">
   <input id="search" placeholder="Search tools…">
-  <select id="categoryFilter"><option value="all">All Categories</option></select>
   <button id="clearBtn">Clear</button>
   <button id="refreshBtn">Refresh</button>
 </div>
 
 <div id="lastUpdated"></div>
 
-<div class="section">
-  <h2>⭐ Favorites</h2>
-  <div id="favGrid" class="grid"></div>
-</div>
-
-<div class="section">
-  <h2>🕒 Recent</h2>
-  <div id="recentGrid" class="grid"></div>
-</div>
-
-<div class="section">
-  <h2>📦 All Tools</h2>
-  <div id="grid" class="grid"></div>
-</div>
+<div class="grid" id="grid"></div>
 
 <footer>
   All Credit to Murali | All Rights Reserved © 2026<br>
@@ -226,29 +215,32 @@ themeToggle.onclick=()=>{
   themeToggle.textContent=isLight?"☀️":"🌙";
 };
 
-/* DOM */
 const grid=document.getElementById("grid");
-const favGrid=document.getElementById("favGrid");
-const recentGrid=document.getElementById("recentGrid");
 const search=document.getElementById("search");
-const categoryFilter=document.getElementById("categoryFilter");
 const clearBtn=document.getElementById("clearBtn");
 const refreshBtn=document.getElementById("refreshBtn");
 
 let data=[];
 let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
-let recent=JSON.parse(localStorage.getItem("recent")||"[]");
 
 /* HELPERS */
 function titleFromUrl(url){
   try{return new URL(url).hostname.replace("www.","").split(".")[0].replace(/^\w/,c=>c.toUpperCase());}
   catch{return "Link";}
 }
-function safeHostname(url){
+function host(url){
   try{return new URL(url).hostname;}catch{return "";}
 }
+function guessCategory(text){
+  text=text.toLowerCase();
+  if(/ai|gpt|llm/.test(text)) return "AI";
+  if(/image|photo/.test(text)) return "Image";
+  if(/video|game/.test(text)) return "Video";
+  if(/pdf|ebook|doc/.test(text)) return "Productivity";
+  return "Other";
+}
 
-/* LOAD DATA – HARD CACHE BUST */
+/* LOAD DATA – RELIABLE */
 async function loadData(force=false){
   const cached=sessionStorage.getItem(CACHE_KEY);
   if(cached && !force){
@@ -264,19 +256,30 @@ async function loadData(force=false){
   const i={
     url:cols.indexOf("url"),
     desc:cols.indexOf("description"),
+    cat:cols.indexOf("category"),
     label:cols.indexOf("status_label")
   };
 
-  data=json.table.rows.map(r=>({
-    url:r.c[i.url]?.v||"",
-    desc:r.c[i.desc]?.v||"",
-    label:r.c[i.label]?.v||"Unknown"
-  })).filter(d=>d.url.startsWith("http"));
+  const fresh=json.table.rows.map(r=>{
+    const url=r.c[i.url]?.v||"";
+    const desc=r.c[i.desc]?.v||"";
+    const rawCat=(r.c[i.cat]?.v||"").trim();
+    return{
+      url,
+      desc,
+      cat:rawCat || guessCategory(url+" "+desc),
+      label:r.c[i.label]?.v||"Unknown"
+    };
+  }).filter(d=>d.url.startsWith("http"));
 
-  sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
+  if(!cached || JSON.stringify(fresh)!==JSON.stringify(data)){
+    data=fresh;
+    sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
+    render();
+  }
+
   document.getElementById("lastUpdated").textContent=
     "Last updated: "+new Date().toLocaleString();
-  render();
 }
 
 /* CARD */
@@ -294,11 +297,14 @@ function createCard(t){
   card.innerHTML=`
     <span class="star ${fav?"active":""}">★</span>
     <a class="title" href="${t.url}" target="_blank">
-      <img class="favicon" src="https://www.google.com/s2/favicons?domain=${safeHostname(t.url)}" onerror="this.remove()">
+      <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host(t.url)}" onerror="this.remove()">
       ${titleFromUrl(t.url)}
     </a>
+    <div class="badge">${t.cat}</div>
     <div class="desc">${t.desc}</div>
-    <div class="status"><span class="dot ${dot}"></span>${t.label}</div>
+    <div class="status">
+      <span class="dot ${dot}"></span>${t.label}
+    </div>
   `;
 
   card.querySelector(".star").onclick=e=>{
@@ -308,19 +314,12 @@ function createCard(t){
     render();
   };
 
-  card.querySelector("a").onclick=()=>{
-    recent=recent.filter(r=>r!==t.url);
-    recent.unshift(t.url);
-    recent=recent.slice(0,5);
-    localStorage.setItem("recent",JSON.stringify(recent));
-  };
-
   return card;
 }
 
 /* RENDER */
 function render(){
-  grid.innerHTML=favGrid.innerHTML=recentGrid.innerHTML="";
+  grid.innerHTML="";
   const q=search.value.toLowerCase();
   data.filter(t=>{
     if(q && !t.url.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return false;
