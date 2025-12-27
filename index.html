@@ -218,7 +218,7 @@ footer{
 
 <script>
 const SHEET_URL =
-"https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json&tq=select * where url is not null";
+"https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json&tq=select * limit 500";
 
 const CACHE_KEY="toolhub-data";
 
@@ -264,13 +264,11 @@ function guessCategory(text){
   if(/pdf|ebook|doc/.test(text)) return "Productivity";
   return "Other";
 }
-
-/* UNIQUE URL */
 function uniqueByUrl(list){
   const seen=new Set();
-  return list.filter(item=>{
-    if(seen.has(item.url)) return false;
-    seen.add(item.url);
+  return list.filter(i=>{
+    if(seen.has(i.url)) return false;
+    seen.add(i.url);
     return true;
   });
 }
@@ -313,7 +311,6 @@ async function loadData(force=false){
 
   data=uniqueByUrl(fresh);
 
-  /* 🔁 RECENT SYNC FIX (TOP 5) */
   recent=recent.filter(r=>data.some(d=>d.url===r)).slice(0,5);
   localStorage.setItem("recent",JSON.stringify(recent));
 
@@ -356,9 +353,7 @@ function createCard(t){
     </a>
     <div class="badge">${t.cat}</div>
     <div class="desc">${t.desc}</div>
-    <div class="status">
-      <span class="dot ${dot}"></span>${t.label}
-    </div>
+    <div class="status"><span class="dot ${dot}"></span>${t.label}</div>
   `;
 
   card.querySelector(".star").onclick=e=>{
@@ -373,6 +368,7 @@ function createCard(t){
     recent.unshift(t.url);
     recent=recent.slice(0,5);
     localStorage.setItem("recent",JSON.stringify(recent));
+    render();
   };
 
   return card;
@@ -389,7 +385,7 @@ function render(){
 
   const filtered=data.filter(t=>{
     if(q && !t.url.toLowerCase().includes(q) &&
-        !t.desc.toLowerCase().includes(q)) return false;
+       !t.desc.toLowerCase().includes(q)) return false;
     if(c!=="all" && t.cat!==c) return false;
     return true;
   });
@@ -414,4 +410,3 @@ loadData();
 
 </body>
 </html>
-
