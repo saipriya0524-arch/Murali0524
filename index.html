@@ -223,43 +223,53 @@ const SHEET_URL =
 const CACHE_KEY="toolhub-data";
 
 /* ---------- CATEGORY ENGINE (IMPROVED) ---------- */
-const CATEGORY_RULES=[
- {name:"AI",keywords:["ai","gpt","llm","chatbot","machine learning"]},
- {name:"Image",keywords:["image","photo","design","avatar","illustration","figma","canva"]},
- {name:"Video",keywords:["video","movie","animation","stream","youtube"]},
- {name:"Audio",keywords:["audio","music","voice","speech","podcast"]},
- {name:"Productivity",keywords:["task","note","doc","pdf","workflow","notion"]},
- {name:"Developer",keywords:["api","sdk","code","github","developer","git"]},
- {name:"Learning",keywords:["learn","course","tutorial","guide","education"]},
- {name:"Directory",keywords:["directory","list","collection","catalog"]},
- {name:"Community",keywords:["community","forum","discord","slack"]},
- {name:"Marketplace",keywords:["pricing","buy","store","marketplace"]}
+const CATEGORY_RULES = [
+ {name:"AI",keywords:["ai","gpt","llm","chatbot","machine learning","assistant","prompt"]},
+ {name:"Image",keywords:["image","photo","design","avatar","illustration","figma","canva","art"]},
+ {name:"Video",keywords:["video","movie","animation","stream","loom","youtube","vimeo"]},
+ {name:"Audio",keywords:["audio","music","voice","speech","podcast","tts"]},
+ {name:"Productivity",keywords:["task","note","doc","pdf","workflow","notion","calendar","todo","manage","organize"]},
+ {name:"Developer",keywords:["api","sdk","code","github","developer","git","deploy","cloud","framework","vercel","netlify"]},
+ {name:"Learning",keywords:["learn","course","tutorial","guide","education","academy","school"]},
+ {name:"Directory",keywords:["directory","list","collection","catalog","resources","tools"]},
+ {name:"Community",keywords:["community","forum","discord","slack","chat","group"]},
+ {name:"Marketplace",keywords:["pricing","buy","store","marketplace","shop","billing"]},
+ {name:"Content",keywords:["blog","newsletter","writing","publish","substack","medium"]}
 ];
 
 function normalizeUrl(u){
   return u.startsWith("http") ? u : "https://" + u;
 }
 
-function guessCategorySmart(url,desc){
-  const norm=normalizeUrl(url);
-  let host="",path="";
+function guessCategorySmart(url, desc){
+  const norm = normalizeUrl(url);
+  let host = "", path = "";
   try{
-    const u=new URL(norm);
-    host=u.hostname.replace(/^www\./,"");
-    path=u.pathname;
+    const u = new URL(norm);
+    host = u.hostname.replace(/^www\./,"");
+    path = u.pathname;
   }catch{}
-  const text=(host+" "+path+" "+(desc||"")).toLowerCase();
 
-  let best="Uncategorized",score=0;
-  CATEGORY_RULES.forEach(r=>{
-    let s=0;
-    r.keywords.forEach(k=>{
-      if(host.includes(k)) s+=3;
-      if(text.includes(k)) s+=1;
+  const text = (host + " " + path + " " + (desc || "")).toLowerCase();
+
+  let best = null;
+  let bestScore = 0;
+  
+  CATEGORY_RULES.forEach(rule=>{
+    let score = 0;
+    rule.keywords.forEach(k=>{
+      if(host.includes(k)) score += 5;   // hostname = strongest
+      else if(path.includes(k)) score += 3;
+      else if(text.includes(k)) score += 1;
     });
-    if(s>score){score=s;best=r.name;}
+    if(score > bestScore){
+      bestScore = score;
+      best = rule.name;
+    }
   });
-  return best;
+
+  // 🚨 IMPORTANT GUARANTEE
+  return best || "Productivity";
 }
 
 /* ---------- THEME ---------- */
@@ -409,3 +419,4 @@ loadData();
 
 </body>
 </html>
+
