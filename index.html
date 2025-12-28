@@ -14,8 +14,9 @@
   --accent:#4dabf7;
 }
 
+/* single-source light mode (stable) */
 .light{
-  --bg:#eef1f5;
+  --bg:#f0fdf4;        /* soft green, NOT white */
   --card:#ffffff;
   --text:#0f172a;
   --muted:#475569;
@@ -61,12 +62,17 @@ input,select,button{
   border-radius:8px;
   border:none;
 }
-.light input,.light select{
-  background:#fff;
-  border:1px solid rgba(15,23,42,.15);
-}
 button{background:#444;color:#fff;cursor:pointer;}
 .light button{background:#2563eb;}
+
+/* round refresh button ONLY */
+#refreshBtn{
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  padding:0;
+  font-size:18px;
+}
 
 /* GRID */
 .grid{
@@ -85,20 +91,6 @@ button{background:#444;color:#fff;cursor:pointer;}
   gap:6px;
   min-height:140px;
   position:relative;
-  transition:.25s;
-}
-.card:hover{
-  transform:translateY(-5px);
-  box-shadow:0 14px 32px rgba(0,0,0,.35);
-}
-
-/* LIGHT MODE CARD FIX */
-.light .card{
-  background:#ffffff;
-  border:1px solid rgba(15,23,42,.08);
-  box-shadow:
-    0 1px 2px rgba(15,23,42,.05),
-    0 10px 24px rgba(15,23,42,.12);
 }
 
 /* TITLE */
@@ -111,11 +103,7 @@ button{background:#444;color:#fff;cursor:pointer;}
   color:var(--accent);
   text-decoration:none;
 }
-.favicon{
-  width:16px;
-  height:16px;
-  border-radius:4px;
-}
+.favicon{width:20px;height:20px;border-radius:6px;}
 
 /* CATEGORY */
 .badge{
@@ -126,31 +114,24 @@ button{background:#444;color:#fff;cursor:pointer;}
   background:#2a2a2a;
   color:#cfe6ff;
 }
-.light .badge{
-  background:#e5edff;
-  color:#1e3a8a;
-}
 
 /* DESCRIPTION */
 .desc{
   font-size:12.5px;
   color:var(--muted);
   line-height:1.35;
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
 }
 
 /* STATUS */
 .status{
-  margin-top:auto;
+  position:absolute;
+  right:14px;
+  bottom:12px;
+  font-size:11.5px;
   display:flex;
-  align-items:center;
   gap:6px;
-  font-size:12px;
 }
-.dot{width:8px;height:8px;border-radius:50%;}
+.dot{width:9px;height:9px;border-radius:50%;}
 .working{background:#22c55e;}
 .broken{background:#ef4444;}
 .redirect{background:#facc15;}
@@ -167,57 +148,39 @@ button{background:#444;color:#fff;cursor:pointer;}
 }
 .star.active{color:#f59e0b;}
 
+/* HELPERS */
+.helper{
+  font-size:12px;
+  color:var(--muted);
+  padding:8px 4px;
+}
+
 /* FOOTER */
 footer{
   margin-top:60px;
   text-align:center;
   font-size:12px;
   color:var(--muted);
-  line-height:1.6;
 }
 
-/* ======================================================
-   v7.8 APPEND-ONLY UI REFINEMENTS (SAFE OVERRIDES)
-   ====================================================== */
-
-/* Center + soften last updated */
-#lastUpdated{
-  text-align:center;
-  margin:12px 0 24px;
-  font-size:12px;
-  opacity:.85;
+/* ABOUT MODAL */
+#aboutModal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  align-items:center;
+  justify-content:center;
 }
-
-/* Light mode soft green background (non-breaking) */
-body.light{
-  background:#f0fdf4;
+#aboutBox{
+  background:var(--card);
+  padding:24px;
+  max-width:520px;
+  border-radius:14px;
 }
-
-/* Slightly larger favicon */
-.favicon{
-  width:20px;
-  height:20px;
-  border-radius:6px;
-}
-
-/* Status pinned bottom-right */
-.card .status{
-  position:absolute;
-  right:14px;
-  bottom:12px;
-  font-size:11.5px;
-  color:var(--muted);
-}
-
-/* Clearer status dot */
-.dot{
-  width:9px;
-  height:9px;
-}
-
-/* Positive visual feedback for working */
-.card .working{
-  box-shadow:0 0 6px rgba(34,197,94,.5);
+#aboutBox button{
+  margin-top:16px;
+  background:var(--accent);
 }
 </style>
 </head>
@@ -235,18 +198,20 @@ body.light{
   <input id="search" placeholder="Search tools…">
   <select id="categoryFilter"><option value="all">All Categories</option></select>
   <button id="clearBtn">Clear</button>
-  <button id="refreshBtn">Refresh</button>
+  <button id="refreshBtn">↻</button>
 </div>
 
-<div id="lastUpdated"></div>
+<div id="lastUpdated" style="text-align:center;margin:14px 0;"></div>
 
 <div class="section">
   <h2>⭐ Favorites</h2>
+  <div id="favHelper" class="helper"></div>
   <div id="favGrid" class="grid"></div>
 </div>
 
 <div class="section">
   <h2>🕒 Recent</h2>
+  <div id="recentHelper" class="helper"></div>
   <div id="recentGrid" class="grid"></div>
 </div>
 
@@ -256,192 +221,129 @@ body.light{
 </div>
 
 <footer>
-  All Credit to Murali | All Rights Reserved © 2025–26<br>
-  Disclaimer: We are not responsible for any data loss, misuse, or external service changes.
+  <div style="margin-top:60px;text-align:center;font-size:12px;color:var(--muted);line-height:1.6;">
+    <a href="#" onclick="openAbout()">About</a> ·
+    <a href="#" onclick="openAbout()">Credits</a> ·
+    <a href="#" onclick="openAbout()">Disclaimer</a>
+    <br>
+    Built &amp; Developed by <b>Murali</b> © 2025–26
+  </div>
 </footer>
 
+
+<div id="aboutModal">
+  <div id="aboutBox">
+    <h3>About ToolStack</h3>
+    <p>ToolStack is a curated, read-only discovery platform that tracks live availability of tools.</p>
+    <p><b>Built & Developed by Murali</b></p>
+    <p>Data sourced from public links. No ownership implied.</p>
+    <button onclick="closeAbout()">Close</button>
+  </div>
+</div>
+
 <script>
+/* ================= CORE PROD LOGIC ================= */
+
 const SHEET_URL =
 "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json&tq=select * limit 1000";
 
-const CACHE_KEY="toolhub-data";
-
-/* ---------- CATEGORY ENGINE ---------- */
-const CATEGORY_RULES = [
- {name:"AI",keywords:["ai","gpt","llm","chatbot","machine learning","assistant","prompt"]},
- {name:"Image",keywords:["image","photo","design","avatar","illustration","figma","canva","art"]},
- {name:"Video",keywords:["video","movie","animation","stream","loom","youtube","vimeo"]},
- {name:"Audio",keywords:["audio","music","voice","speech","podcast","tts"]},
- {name:"Productivity",keywords:["task","note","doc","pdf","workflow","notion","calendar","todo","manage","organize"]},
- {name:"Developer",keywords:["api","sdk","code","github","developer","git","deploy","cloud","framework","vercel","netlify"]},
- {name:"Learning",keywords:["learn","course","tutorial","guide","education","academy","school"]},
- {name:"Directory",keywords:["directory","list","collection","catalog","resources","tools"]},
- {name:"Community",keywords:["community","forum","discord","slack","chat","group"]},
- {name:"Marketplace",keywords:["pricing","buy","store","marketplace","shop","billing"]},
- {name:"Content",keywords:["blog","newsletter","writing","publish","substack","medium"]}
-];
-
-function normalizeUrl(u){
-  return u.startsWith("http") ? u : "https://" + u;
-}
-
-function guessCategorySmart(url, desc){
-  const norm = normalizeUrl(url);
-  let host = "", path = "";
-  try{
-    const u = new URL(norm);
-    host = u.hostname.replace(/^www\./,"");
-    path = u.pathname;
-  }catch{}
-  const text = (host + " " + path + " " + (desc || "")).toLowerCase();
-  let best = null, bestScore = 0;
-  CATEGORY_RULES.forEach(rule=>{
-    let score = 0;
-    rule.keywords.forEach(k=>{
-      if(host.includes(k)) score += 5;
-      else if(path.includes(k)) score += 3;
-      else if(text.includes(k)) score += 1;
-    });
-    if(score > bestScore){
-      bestScore = score;
-      best = rule.name;
-    }
-  });
-  return best || "Productivity";
-}
-
-/* ---------- THEME ---------- */
-const themeToggle=document.getElementById("themeToggle");
-if(localStorage.getItem("theme")==="light"){
-  document.body.classList.add("light");
-  themeToggle.textContent="☀️";
-}
-themeToggle.onclick=()=>{
-  document.body.classList.toggle("light");
-  const l=document.body.classList.contains("light");
-  localStorage.setItem("theme",l?"light":"dark");
-  themeToggle.textContent=l?"☀️":"🌙";
-};
-
-/* ---------- DOM ---------- */
-const grid=document.getElementById("grid");
-const favGrid=document.getElementById("favGrid");
-const recentGrid=document.getElementById("recentGrid");
-const search=document.getElementById("search");
-const categoryFilter=document.getElementById("categoryFilter");
-const clearBtn=document.getElementById("clearBtn");
-const refreshBtn=document.getElementById("refreshBtn");
-
-let data=[];
+let data=[], lastFetchTime=null;
 let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
 let recent=JSON.parse(localStorage.getItem("recent")||"[]");
 
-/* ---------- HELPERS ---------- */
-function titleFromUrl(u){
- try{return new URL(normalizeUrl(u)).hostname.replace(/^www\./,"").split(".")[0].replace(/^\w/,c=>c.toUpperCase());}
- catch{return "Link";}
-}
-function host(u){try{return new URL(normalizeUrl(u)).hostname;}catch{return "";}}
+/* ABOUT */
+function openAbout(){aboutModal.style.display="flex";}
+function closeAbout(){aboutModal.style.display="none";}
 
-/* ---------- LOAD ---------- */
+/* THEME */
+if(localStorage.getItem("theme")==="light"){
+ document.body.classList.add("light");
+ themeToggle.textContent="☀️";
+}
+themeToggle.onclick=()=>{
+ document.body.classList.toggle("light");
+ const l=document.body.classList.contains("light");
+ localStorage.setItem("theme",l?"light":"dark");
+ themeToggle.textContent=l?"☀️":"🌙";
+};
+
+/* HELPERS */
+function updateHelpers(){
+ favHelper.textContent=favorites.length? "" : "⭐ Star tools to see them here";
+ recentHelper.textContent=recent.length? "" : "🕒 Tools you open appear here";
+}
+
+/* UPDATED TIME */
+function updateTime(){
+ if(!lastFetchTime) return;
+ const mins=Math.floor((Date.now()-lastFetchTime)/60000);
+ lastUpdated.textContent=mins<1?"Updated just now":`Updated ${mins} min ago`;
+}
+setInterval(updateTime,60000);
+
+/* LOAD DATA */
 async function loadData(force=false){
- const cached=sessionStorage.getItem(CACHE_KEY);
- if(cached && !force){
-  data=JSON.parse(cached);
-  populateCategories();
+ try{
+  const res=await fetch(SHEET_URL);
+  const txt=await res.text();
+  const json=JSON.parse(txt.substring(47).slice(0,-2));
+  const cols=json.table.cols.map(c=>c.label.toLowerCase());
+  const i={url:cols.indexOf("url"),desc:cols.indexOf("description"),label:cols.indexOf("status_label")};
+  data=json.table.rows.map(r=>{
+    return{
+      url:r.c[i.url]?.v||"",
+      desc:r.c[i.desc]?.v||"",
+      label:r.c[i.label]?.v||"Unknown"
+    };
+  }).filter(d=>d.url);
+  lastFetchTime=Date.now();
   render();
-  return;
+ }catch{
+  grid.innerHTML="<div class='helper'>⚠ Connect to internet to load tools</div>";
  }
- const res=await fetch(SHEET_URL);
- const txt=await res.text();
- const json=JSON.parse(txt.substring(47).slice(0,-2));
- const cols=json.table.cols.map(c=>c.label.toLowerCase());
- const i={url:cols.indexOf("url"),desc:cols.indexOf("description"),label:cols.indexOf("status_label")};
- data=json.table.rows.map(r=>{
-  const url=r.c[i.url]?.v||"";
-  const desc=r.c[i.desc]?.v||"";
-  return{url,desc,cat:guessCategorySmart(url,desc),label:r.c[i.label]?.v||"Unknown"};
- }).filter(d=>d.url);
- sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
- populateCategories();
- render();
- document.getElementById("lastUpdated").textContent=
-  "Updated · " + new Date().toLocaleString();
 }
 
-/* ---------- CATEGORY FILTER ---------- */
-function populateCategories(){
- const cats=[...new Set(data.map(d=>d.cat))].sort();
- categoryFilter.innerHTML='<option value="all">All Categories</option>';
- cats.forEach(c=>{
-  const o=document.createElement("option");
-  o.value=o.textContent=c;
-  categoryFilter.appendChild(o);
- });
+/* RENDER */
+function render(){
+ grid.innerHTML=favGrid.innerHTML=recentGrid.innerHTML="";
+ updateHelpers();
+ data.forEach(t=>grid.appendChild(createCard(t)));
+ favorites.map(f=>data.find(d=>d.url===f)).filter(Boolean)
+   .forEach(t=>favGrid.appendChild(createCard(t)));
+ recent.map(r=>data.find(d=>d.url===r)).filter(Boolean)
+   .forEach(t=>recentGrid.appendChild(createCard(t)));
+ updateTime();
 }
 
-/* ---------- CARD ---------- */
+/* CARD */
 function createCard(t){
- let dot="unknown";
- const l=t.label.toLowerCase();
- if(l.includes("working")) dot="working";
- else if(l.includes("redirect")) dot="redirect";
- else if(l.includes("blocked")||l.includes("not")) dot="broken";
-
  const card=document.createElement("div");
  card.className="card";
  const fav=favorites.includes(t.url);
-
  card.innerHTML=`
   <span class="star ${fav?"active":""}">★</span>
-  <a class="title" href="${normalizeUrl(t.url)}" target="_blank">
-   <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host(t.url)}">
-   ${titleFromUrl(t.url)}
-  </a>
-  <div class="badge">${t.cat}</div>
+  <a class="title" href="${t.url}" target="_blank">${t.url}</a>
   <div class="desc">${t.desc}</div>
-  <div class="status"><span class="dot ${dot}"></span>${t.label}</div>
+  <div class="status"><span class="dot unknown"></span>${t.label}</div>
  `;
-
  card.querySelector(".star").onclick=e=>{
   e.stopPropagation();
   fav?favorites=favorites.filter(f=>f!==t.url):favorites.push(t.url);
   localStorage.setItem("favorites",JSON.stringify(favorites));
   render();
  };
-
  card.querySelector(".title").onclick=()=>{
   recent=recent.filter(r=>r!==t.url);
   recent.unshift(t.url);
   recent=recent.slice(0,5);
   localStorage.setItem("recent",JSON.stringify(recent));
-  render();
  };
-
  return card;
 }
 
-/* ---------- RENDER ---------- */
-function render(){
- grid.innerHTML=favGrid.innerHTML=recentGrid.innerHTML="";
- const q=search.value.toLowerCase();
- const c=categoryFilter.value;
-
- const filtered=data.filter(t=>{
-  if(q && !t.url.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return false;
-  if(c!=="all" && t.cat!==c) return false;
-  return true;
- });
-
- filtered.filter(t=>favorites.includes(t.url)).forEach(t=>favGrid.appendChild(createCard(t)));
- recent.map(r=>filtered.find(t=>t.url===r)).filter(Boolean).forEach(t=>recentGrid.appendChild(createCard(t)));
- filtered.forEach(t=>grid.appendChild(createCard(t)));
-}
-
-search.oninput=render;
-categoryFilter.onchange=render;
-clearBtn.onclick=()=>{search.value="";categoryFilter.value="all";render();}
-refreshBtn.onclick=()=>{sessionStorage.removeItem(CACHE_KEY);loadData(true);};
+/* CONTROLS */
+clearBtn.onclick=()=>{search.value="";render();}
+refreshBtn.onclick=()=>loadData(true);
 
 loadData();
 </script>
