@@ -15,7 +15,7 @@
 }
 
 .light{
-  --bg:#f0fdf4;
+  --bg:#eef1f5;
   --card:#ffffff;
   --text:#0f172a;
   --muted:#475569;
@@ -61,27 +61,12 @@ input,select,button{
   border-radius:8px;
   border:none;
 }
+.light input,.light select{
+  background:#fff;
+  border:1px solid rgba(15,23,42,.15);
+}
 button{background:#444;color:#fff;cursor:pointer;}
 .light button{background:#2563eb;}
-
-#refreshBtn{
-  width:40px;
-  height:40px;
-  border-radius:50%;
-  padding:0;
-  font-size:18px;
-}
-
-/* META BAR */
-#metaBar{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:6px;
-  font-size:12px;
-  color:var(--muted);
-  margin:14px 0 22px;
-}
 
 /* GRID */
 .grid{
@@ -100,6 +85,20 @@ button{background:#444;color:#fff;cursor:pointer;}
   gap:6px;
   min-height:140px;
   position:relative;
+  transition:.25s;
+}
+.card:hover{
+  transform:translateY(-5px);
+  box-shadow:0 14px 32px rgba(0,0,0,.35);
+}
+
+/* LIGHT MODE CARD FIX */
+.light .card{
+  background:#ffffff;
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:
+    0 1px 2px rgba(15,23,42,.05),
+    0 10px 24px rgba(15,23,42,.12);
 }
 
 /* TITLE */
@@ -111,11 +110,12 @@ button{background:#444;color:#fff;cursor:pointer;}
   font-size:14.5px;
   color:var(--accent);
   text-decoration:none;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
 }
-.favicon{width:20px;height:20px;border-radius:6px;}
+.favicon{
+  width:16px;
+  height:16px;
+  border-radius:4px;
+}
 
 /* CATEGORY */
 .badge{
@@ -125,6 +125,10 @@ button{background:#444;color:#fff;cursor:pointer;}
   border-radius:999px;
   background:#2a2a2a;
   color:#cfe6ff;
+}
+.light .badge{
+  background:#e5edff;
+  color:#1e3a8a;
 }
 
 /* DESCRIPTION */
@@ -140,15 +144,13 @@ button{background:#444;color:#fff;cursor:pointer;}
 
 /* STATUS */
 .status{
-  position:absolute;
-  right:14px;
-  bottom:12px;
-  font-size:11.5px;
+  margin-top:auto;
   display:flex;
+  align-items:center;
   gap:6px;
-  color:var(--muted);
+  font-size:12px;
 }
-.dot{width:9px;height:9px;border-radius:50%;}
+.dot{width:8px;height:8px;border-radius:50%;}
 .working{background:#22c55e;}
 .broken{background:#ef4444;}
 .redirect{background:#facc15;}
@@ -165,13 +167,6 @@ button{background:#444;color:#fff;cursor:pointer;}
 }
 .star.active{color:#f59e0b;}
 
-/* HELPERS */
-.helper{
-  font-size:12px;
-  color:var(--muted);
-  padding:8px 4px;
-}
-
 /* FOOTER */
 footer{
   margin-top:60px;
@@ -179,6 +174,50 @@ footer{
   font-size:12px;
   color:var(--muted);
   line-height:1.6;
+}
+
+/* ======================================================
+   v7.8 APPEND-ONLY UI REFINEMENTS (SAFE OVERRIDES)
+   ====================================================== */
+
+/* Center + soften last updated */
+#lastUpdated{
+  text-align:center;
+  margin:12px 0 24px;
+  font-size:12px;
+  opacity:.85;
+}
+
+/* Light mode soft green background (non-breaking) */
+body.light{
+  background:#f0fdf4;
+}
+
+/* Slightly larger favicon */
+.favicon{
+  width:20px;
+  height:20px;
+  border-radius:6px;
+}
+
+/* Status pinned bottom-right */
+.card .status{
+  position:absolute;
+  right:14px;
+  bottom:12px;
+  font-size:11.5px;
+  color:var(--muted);
+}
+
+/* Clearer status dot */
+.dot{
+  width:9px;
+  height:9px;
+}
+
+/* Positive visual feedback for working */
+.card .working{
+  box-shadow:0 0 6px rgba(34,197,94,.5);
 }
 </style>
 </head>
@@ -196,24 +235,18 @@ footer{
   <input id="search" placeholder="Search tools…">
   <select id="categoryFilter"><option value="all">All Categories</option></select>
   <button id="clearBtn">Clear</button>
-  <button id="refreshBtn">↻</button>
+  <button id="refreshBtn">Refresh</button>
 </div>
 
-<div id="metaBar">
-  <span id="toolCount"></span>
-  <span id="metaSep">·</span>
-  <span id="lastUpdated"></span>
-</div>
+<div id="lastUpdated"></div>
 
 <div class="section">
   <h2>⭐ Favorites</h2>
-  <div id="favHelper" class="helper"></div>
   <div id="favGrid" class="grid"></div>
 </div>
 
 <div class="section">
   <h2>🕒 Recent</h2>
-  <div id="recentHelper" class="helper"></div>
   <div id="recentGrid" class="grid"></div>
 </div>
 
@@ -223,79 +256,120 @@ footer{
 </div>
 
 <footer>
-  About · Credits · Disclaimer<br>
-  Built & Developed by <b>Murali</b> © 2025–26
+  Developed by Murali | All Rights Reserved © 2025–26 <br>
+  Disclaimer: We are not responsible for any data loss, misuse, or external service changes.
 </footer>
 
 <script>
 const SHEET_URL =
 "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json&tq=select * limit 1000";
 
-let data=[], lastFetchTime=null;
+const CACHE_KEY="toolhub-data";
+
+/* ---------- CATEGORY ENGINE ---------- */
+const CATEGORY_RULES = [
+ {name:"AI",keywords:["ai","gpt","llm","chatbot","machine learning","assistant","prompt"]},
+ {name:"Image",keywords:["image","photo","design","avatar","illustration","figma","canva","art"]},
+ {name:"Video",keywords:["video","movie","animation","stream","loom","youtube","vimeo"]},
+ {name:"Audio",keywords:["audio","music","voice","speech","podcast","tts"]},
+ {name:"Productivity",keywords:["task","note","doc","pdf","workflow","notion","calendar","todo","manage","organize"]},
+ {name:"Developer",keywords:["api","sdk","code","github","developer","git","deploy","cloud","framework","vercel","netlify"]},
+ {name:"Learning",keywords:["learn","course","tutorial","guide","education","academy","school"]},
+ {name:"Directory",keywords:["directory","list","collection","catalog","resources","tools"]},
+ {name:"Community",keywords:["community","forum","discord","slack","chat","group"]},
+ {name:"Marketplace",keywords:["pricing","buy","store","marketplace","shop","billing"]},
+ {name:"Content",keywords:["blog","newsletter","writing","publish","substack","medium"]}
+];
+
+function normalizeUrl(u){
+  return u.startsWith("http") ? u : "https://" + u;
+}
+
+function guessCategorySmart(url, desc){
+  const norm = normalizeUrl(url);
+  let host = "", path = "";
+  try{
+    const u = new URL(norm);
+    host = u.hostname.replace(/^www\./,"");
+    path = u.pathname;
+  }catch{}
+  const text = (host + " " + path + " " + (desc || "")).toLowerCase();
+  let best = null, bestScore = 0;
+  CATEGORY_RULES.forEach(rule=>{
+    let score = 0;
+    rule.keywords.forEach(k=>{
+      if(host.includes(k)) score += 5;
+      else if(path.includes(k)) score += 3;
+      else if(text.includes(k)) score += 1;
+    });
+    if(score > bestScore){
+      bestScore = score;
+      best = rule.name;
+    }
+  });
+  return best || "Productivity";
+}
+
+/* ---------- THEME ---------- */
+const themeToggle=document.getElementById("themeToggle");
+if(localStorage.getItem("theme")==="light"){
+  document.body.classList.add("light");
+  themeToggle.textContent="☀️";
+}
+themeToggle.onclick=()=>{
+  document.body.classList.toggle("light");
+  const l=document.body.classList.contains("light");
+  localStorage.setItem("theme",l?"light":"dark");
+  themeToggle.textContent=l?"☀️":"🌙";
+};
+
+/* ---------- DOM ---------- */
+const grid=document.getElementById("grid");
+const favGrid=document.getElementById("favGrid");
+const recentGrid=document.getElementById("recentGrid");
+const search=document.getElementById("search");
+const categoryFilter=document.getElementById("categoryFilter");
+const clearBtn=document.getElementById("clearBtn");
+const refreshBtn=document.getElementById("refreshBtn");
+
+let data=[];
 let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
 let recent=JSON.parse(localStorage.getItem("recent")||"[]");
 
-/* THEME */
-if(localStorage.getItem("theme")==="light"){
- document.body.classList.add("light");
- themeToggle.textContent="☀️";
+/* ---------- HELPERS ---------- */
+function titleFromUrl(u){
+ try{return new URL(normalizeUrl(u)).hostname.replace(/^www\./,"").split(".")[0].replace(/^\w/,c=>c.toUpperCase());}
+ catch{return "Link";}
 }
-themeToggle.onclick=()=>{
- document.body.classList.toggle("light");
- const l=document.body.classList.contains("light");
- localStorage.setItem("theme",l?"light":"dark");
- themeToggle.textContent=l?"☀️":"🌙";
-};
+function host(u){try{return new URL(normalizeUrl(u)).hostname;}catch{return "";}}
 
-/* UI STATE */
-function showOfflineState(){
-  toolCount.textContent="";
-  lastUpdated.textContent="";
-  metaSep.style.display="none";
-  grid.innerHTML="<div class='helper'>⚠ Connect to internet to load tools</div>";
-}
-
-/* META */
-function updateMeta(){
- toolCount.textContent=`${data.length} tools`;
- const mins=Math.floor((Date.now()-lastFetchTime)/60000);
- lastUpdated.textContent=mins<1?"Updated just now":`Updated ${mins} min ago`;
- metaSep.style.display="inline";
-}
-
-/* HELPERS */
-function updateHelpers(){
- favHelper.textContent=favorites.length?"":"⭐ Star tools to see them here";
- recentHelper.textContent=recent.length?"":"🕒 Tools you open appear here";
-}
-
-/* LOAD DATA */
-async function loadData(){
- try{
-  const res=await fetch(SHEET_URL);
-  const txt=await res.text();
-  const json=JSON.parse(txt.substring(47).slice(0,-2));
-  const cols=json.table.cols.map(c=>c.label.toLowerCase());
-  const i={url:cols.indexOf("url"),desc:cols.indexOf("description"),label:cols.indexOf("status_label"),cat:cols.indexOf("category")};
-
-  data=json.table.rows.map(r=>({
-    url:r.c[i.url]?.v||"",
-    desc:r.c[i.desc]?.v||"",
-    label:r.c[i.label]?.v||"Unknown",
-    cat:r.c[i.cat]?.v||"Uncategorized"
-  })).filter(d=>d.url);
-
-  lastFetchTime=Date.now();
+/* ---------- LOAD ---------- */
+async function loadData(force=false){
+ const cached=sessionStorage.getItem(CACHE_KEY);
+ if(cached && !force){
+  data=JSON.parse(cached);
   populateCategories();
-  updateMeta();
   render();
- }catch{
-  data=[];
-  showOfflineState();
+  return;
  }
+ const res=await fetch(SHEET_URL);
+ const txt=await res.text();
+ const json=JSON.parse(txt.substring(47).slice(0,-2));
+ const cols=json.table.cols.map(c=>c.label.toLowerCase());
+ const i={url:cols.indexOf("url"),desc:cols.indexOf("description"),label:cols.indexOf("status_label")};
+ data=json.table.rows.map(r=>{
+  const url=r.c[i.url]?.v||"";
+  const desc=r.c[i.desc]?.v||"";
+  return{url,desc,cat:guessCategorySmart(url,desc),label:r.c[i.label]?.v||"Unknown"};
+ }).filter(d=>d.url);
+ sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
+ populateCategories();
+ render();
+ document.getElementById("lastUpdated").textContent=
+  "Updated · " + new Date().toLocaleString();
 }
 
-/* CATEGORY */
+/* ---------- CATEGORY FILTER ---------- */
 function populateCategories(){
  const cats=[...new Set(data.map(d=>d.cat))].sort();
  categoryFilter.innerHTML='<option value="all">All Categories</option>';
@@ -304,29 +378,25 @@ function populateCategories(){
   o.value=o.textContent=c;
   categoryFilter.appendChild(o);
  });
- categoryFilter.value="all";
 }
 
-/* CARD */
+/* ---------- CARD ---------- */
 function createCard(t){
- const card=document.createElement("div");
- card.className="card";
- const fav=favorites.includes(t.url);
-
  let dot="unknown";
  const l=t.label.toLowerCase();
  if(l.includes("working")) dot="working";
  else if(l.includes("redirect")) dot="redirect";
- else if(l.includes("not")||l.includes("block")) dot="broken";
+ else if(l.includes("blocked")||l.includes("not")) dot="broken";
 
- const host=new URL(t.url).hostname.replace(/^www\./,"");
- const title=host.split(".")[0].replace(/^\w/,c=>c.toUpperCase());
+ const card=document.createElement("div");
+ card.className="card";
+ const fav=favorites.includes(t.url);
 
  card.innerHTML=`
   <span class="star ${fav?"active":""}">★</span>
-  <a class="title" href="${t.url}" target="_blank">
-    <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host}">
-    ${title}
+  <a class="title" href="${normalizeUrl(t.url)}" target="_blank">
+   <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host(t.url)}">
+   ${titleFromUrl(t.url)}
   </a>
   <div class="badge">${t.cat}</div>
   <div class="desc">${t.desc}</div>
@@ -345,16 +415,17 @@ function createCard(t){
   recent.unshift(t.url);
   recent=recent.slice(0,5);
   localStorage.setItem("recent",JSON.stringify(recent));
+  render();
  };
 
  return card;
 }
 
-/* RENDER */
+/* ---------- RENDER ---------- */
 function render(){
  grid.innerHTML=favGrid.innerHTML=recentGrid.innerHTML="";
  const q=search.value.toLowerCase();
- const c=categoryFilter.value||"all";
+ const c=categoryFilter.value;
 
  const filtered=data.filter(t=>{
   if(q && !t.url.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return false;
@@ -362,24 +433,18 @@ function render(){
   return true;
  });
 
+ filtered.filter(t=>favorites.includes(t.url)).forEach(t=>favGrid.appendChild(createCard(t)));
+ recent.map(r=>filtered.find(t=>t.url===r)).filter(Boolean).forEach(t=>recentGrid.appendChild(createCard(t)));
  filtered.forEach(t=>grid.appendChild(createCard(t)));
- favorites.map(f=>filtered.find(t=>t.url===f)).filter(Boolean)
-   .forEach(t=>favGrid.appendChild(createCard(t)));
- recent.map(r=>filtered.find(t=>t.url===r)).filter(Boolean)
-   .forEach(t=>recentGrid.appendChild(createCard(t)));
-
- updateHelpers();
 }
 
-/* CONTROLS */
 search.oninput=render;
 categoryFilter.onchange=render;
-clearBtn.onclick=()=>{search.value="";categoryFilter.value="all";render();};
-refreshBtn.onclick=loadData;
+clearBtn.onclick=()=>{search.value="";categoryFilter.value="all";render();}
+refreshBtn.onclick=()=>{sessionStorage.removeItem(CACHE_KEY);loadData(true);};
 
 loadData();
 </script>
 
 </body>
 </html>
-
