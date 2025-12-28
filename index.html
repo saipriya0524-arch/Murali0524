@@ -14,7 +14,7 @@
   --accent:#4dabf7;
 }
 
-/* stable single-source light mode */
+/* single-source light mode (stable) */
 .light{
   --bg:#f0fdf4;
   --card:#ffffff;
@@ -74,11 +74,14 @@ button{background:#444;color:#fff;cursor:pointer;}
 }
 
 /* META */
-#lastUpdated{
+#metaBar{
   text-align:center;
-  margin:12px 0 24px;
   font-size:12px;
   color:var(--muted);
+  margin:14px 0 22px;
+  display:flex;
+  justify-content:center;
+  gap:14px;
 }
 
 /* GRID */
@@ -113,11 +116,7 @@ button{background:#444;color:#fff;cursor:pointer;}
   overflow:hidden;
   text-overflow:ellipsis;
 }
-.favicon{
-  width:20px;
-  height:20px;
-  border-radius:6px;
-}
+.favicon{width:20px;height:20px;border-radius:6px;}
 
 /* CATEGORY */
 .badge{
@@ -147,7 +146,6 @@ button{background:#444;color:#fff;cursor:pointer;}
   bottom:12px;
   font-size:11.5px;
   display:flex;
-  align-items:center;
   gap:6px;
   color:var(--muted);
 }
@@ -181,7 +179,6 @@ footer{
   text-align:center;
   font-size:12px;
   color:var(--muted);
-  line-height:1.6;
 }
 
 /* ABOUT MODAL */
@@ -222,7 +219,10 @@ footer{
   <button id="refreshBtn">↻</button>
 </div>
 
-<div id="lastUpdated"></div>
+<div id="metaBar">
+  <div id="toolCount"></div>
+  <div id="lastUpdated"></div>
+</div>
 
 <div class="section">
   <h2>⭐ Favorites</h2>
@@ -253,7 +253,7 @@ footer{
   <div id="aboutBox">
     <h3>About ToolStack</h3>
     <p>ToolStack is a curated, read-only discovery platform that tracks live availability of tools.</p>
-    <p><b>Built & Developed by Murali</b></p>
+    <p><b>Built &amp; Developed by Murali</b></p>
     <p>Data sourced from public links. No ownership implied.</p>
     <button onclick="closeAbout()">Close</button>
   </div>
@@ -285,8 +285,8 @@ themeToggle.onclick=()=>{
 
 /* HELPERS */
 function updateHelpers(){
- favHelper.textContent=favorites.length?"":"⭐ Star tools to see them here";
- recentHelper.textContent=recent.length?"":"🕒 Tools you open appear here";
+ favHelper.textContent=favorites.length? "" : "⭐ Star tools to see them here";
+ recentHelper.textContent=recent.length? "" : "🕒 Tools you open appear here";
 }
 
 /* UPDATED TIME */
@@ -297,6 +297,11 @@ function updateTime(){
 }
 setInterval(updateTime,60000);
 
+/* TOOL COUNT */
+function updateToolCount(){
+ toolCount.textContent=`${data.length} tools`;
+}
+
 /* LOAD DATA */
 async function loadData(){
  try{
@@ -304,90 +309,105 @@ async function loadData(){
   const txt=await res.text();
   const json=JSON.parse(txt.substring(47).slice(0,-2));
   const cols=json.table.cols.map(c=>c.label.toLowerCase());
-  const i={url:cols.indexOf("url"),desc:cols.indexOf("description"),label:cols.indexOf("status_label")};
-  data=json.table.rows.map(r=>({
-    url:r.c[i.url]?.v||"",
-    desc:r.c[i.desc]?.v||"",
-    label:r.c[i.label]?.v||"Unknown"
-  })).filter(d=>d.url);
+  const i={
+    url:cols.indexOf("url"),
+    desc:cols.indexOf("description"),
+    label:cols.indexOf("status_label"),
+    cat:cols.indexOf("category")
+  };
+  data=json.table.rows.map(r=>{
+    return{
+      url:r.c[i.url]?.v||"",
+      desc:r.c[i.desc]?.v||"",
+      label:r.c[i.label]?.v||"Unknown",
+      cat:r.c[i.cat]?.v||"Uncategorized"
+    };
+  }).filter(d=>d.url);
   lastFetchTime=Date.now();
-  populateCategories();
+  updateToolCount();
   render();
  }catch{
   grid.innerHTML="<div class='helper'>⚠ Connect to internet to load tools</div>";
  }
 }
 
-/* CATEGORY */
-function populateCategories(){
- const cats=[...new Set(data.map(d=>d.label))].sort();
- categoryFilter.innerHTML='<option value="all">All Categories</option>';
- cats.forEach(c=>{
-  const o=document.createElement("option");
-  o.value=o.textContent=c;
-  categoryFilter.appendChild(o);
+/* RENDER */
+function render(){
+ grid.innerHTML="";
+ favGrid.innerHTML="";
+ recentGrid.innerHTML="";
+
+ const q=search.value.toLowerCase();
+ const c=categoryFilter.value;
+
+ const filtered=data.filter(t=>{
+   if(q && !t.url.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return false;
+   if(c!=="all" && t.cat!==c) return false;
+   return true;
  });
+
+ filtered.forEach(t=>grid.appendChild(createCard(t)));
+
+ favorites.map(f=>filtered.find(d=>d.url===f)).filter(Boolean)
+   .forEach(t=>favGrid.appendChild(createCard(t)));
+
+ recent.map(r=>filtered.find(d=>d.url===r)).filter(Boolean)
+   .forEach(t=>recentGrid.appendChild(createCard(t)));
+
+ updateHelpers();
+ updateTime();
 }
 
 /* CARD */
-function titleFromUrl(u){
- try{
-  return new URL(u).hostname.replace(/^www\./,"").split(".")[0]
-   .replace(/^\w/,c=>c.toUpperCase());
- }catch{return "Link";}
-}
-function host(u){
- try{return new URL(u).hostname;}catch{return "";}
-}
 function createCard(t){
  const card=document.createElement("div");
  card.className="card";
  const fav=favorites.includes(t.url);
+ const host=new URL(t.url).hostname.replace(/^www\./,"");
+ const title=host.split(".")[0].replace(/^\w/,c=>c.toUpperCase());
+
  let dot="unknown";
  const l=t.label.toLowerCase();
  if(l.includes("working")) dot="working";
  else if(l.includes("redirect")) dot="redirect";
- else if(l.includes("not")||l.includes("block")) dot="broken";
+ else if(l.includes("blocked")||l.includes("not")) dot="broken";
+
  card.innerHTML=`
   <span class="star ${fav?"active":""}">★</span>
   <a class="title" href="${t.url}" target="_blank">
-    <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host(t.url)}">
-    ${titleFromUrl(t.url)}
+    <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host}">
+    ${title}
   </a>
+  <div class="badge">${t.cat}</div>
   <div class="desc">${t.desc}</div>
   <div class="status"><span class="dot ${dot}"></span>${t.label}</div>
  `;
+
  card.querySelector(".star").onclick=e=>{
   e.stopPropagation();
   fav?favorites=favorites.filter(f=>f!==t.url):favorites.push(t.url);
   localStorage.setItem("favorites",JSON.stringify(favorites));
   render();
  };
+
  card.querySelector(".title").onclick=()=>{
   recent=recent.filter(r=>r!==t.url);
   recent.unshift(t.url);
   recent=recent.slice(0,5);
   localStorage.setItem("recent",JSON.stringify(recent));
  };
+
  return card;
 }
 
-/* RENDER */
-function render(){
- grid.innerHTML=favGrid.innerHTML=recentGrid.innerHTML="";
- updateHelpers();
- const c=categoryFilter.value;
- data.filter(t=>c==="all"||t.label===c)
-     .forEach(t=>grid.appendChild(createCard(t)));
- favorites.map(f=>data.find(d=>d.url===f)).filter(Boolean)
-   .forEach(t=>favGrid.appendChild(createCard(t)));
- recent.map(r=>data.find(d=>d.url===r)).filter(Boolean)
-   .forEach(t=>recentGrid.appendChild(createCard(t)));
- updateTime();
-}
-
 /* CONTROLS */
-clearBtn.onclick=()=>{search.value="";categoryFilter.value="all";render();};
+search.oninput=render;
+categoryFilter.onchange=render;
+clearBtn.onclick=()=>{
+ search.value="";
+ categoryFilter.value="all";
+ render();
+};
 refreshBtn.onclick=()=>loadData();
 
 loadData();
