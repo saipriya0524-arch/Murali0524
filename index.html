@@ -175,6 +175,50 @@ footer{
   color:var(--muted);
   line-height:1.6;
 }
+
+/* ======================================================
+   v7.8 APPEND-ONLY UI REFINEMENTS (SAFE OVERRIDES)
+   ====================================================== */
+
+/* Center + soften last updated */
+#lastUpdated{
+  text-align:center;
+  margin:12px 0 24px;
+  font-size:12px;
+  opacity:.85;
+}
+
+/* Light mode soft green background (non-breaking) */
+body.light{
+  background:#f0fdf4;
+}
+
+/* Slightly larger favicon */
+.favicon{
+  width:20px;
+  height:20px;
+  border-radius:6px;
+}
+
+/* Status pinned bottom-right */
+.card .status{
+  position:absolute;
+  right:14px;
+  bottom:12px;
+  font-size:11.5px;
+  color:var(--muted);
+}
+
+/* Clearer status dot */
+.dot{
+  width:9px;
+  height:9px;
+}
+
+/* Positive visual feedback for working */
+.card .working{
+  box-shadow:0 0 6px rgba(34,197,94,.5);
+}
 </style>
 </head>
 
@@ -184,7 +228,7 @@ footer{
 
 <header>
   <h1>ToolStack</h1>
-  <p>Curated tools · Live status · Smart discovery</p>
+  <p>Explore curated tools with live status and smart categories.</p>
 </header>
 
 <div class="controls">
@@ -222,7 +266,7 @@ const SHEET_URL =
 
 const CACHE_KEY="toolhub-data";
 
-/* ---------- CATEGORY ENGINE (IMPROVED) ---------- */
+/* ---------- CATEGORY ENGINE ---------- */
 const CATEGORY_RULES = [
  {name:"AI",keywords:["ai","gpt","llm","chatbot","machine learning","assistant","prompt"]},
  {name:"Image",keywords:["image","photo","design","avatar","illustration","figma","canva","art"]},
@@ -249,16 +293,12 @@ function guessCategorySmart(url, desc){
     host = u.hostname.replace(/^www\./,"");
     path = u.pathname;
   }catch{}
-
   const text = (host + " " + path + " " + (desc || "")).toLowerCase();
-
-  let best = null;
-  let bestScore = 0;
-  
+  let best = null, bestScore = 0;
   CATEGORY_RULES.forEach(rule=>{
     let score = 0;
     rule.keywords.forEach(k=>{
-      if(host.includes(k)) score += 5;   // hostname = strongest
+      if(host.includes(k)) score += 5;
       else if(path.includes(k)) score += 3;
       else if(text.includes(k)) score += 1;
     });
@@ -267,8 +307,6 @@ function guessCategorySmart(url, desc){
       best = rule.name;
     }
   });
-
-  // 🚨 IMPORTANT GUARANTEE
   return best || "Productivity";
 }
 
@@ -318,26 +356,17 @@ async function loadData(force=false){
  const txt=await res.text();
  const json=JSON.parse(txt.substring(47).slice(0,-2));
  const cols=json.table.cols.map(c=>c.label.toLowerCase());
- const i={
-  url:cols.indexOf("url"),
-  desc:cols.indexOf("description"),
-  label:cols.indexOf("status_label")
- };
+ const i={url:cols.indexOf("url"),desc:cols.indexOf("description"),label:cols.indexOf("status_label")};
  data=json.table.rows.map(r=>{
   const url=r.c[i.url]?.v||"";
   const desc=r.c[i.desc]?.v||"";
-  return{
-   url,
-   desc,
-   cat:guessCategorySmart(url,desc),
-   label:r.c[i.label]?.v||"Unknown"
-  };
+  return{url,desc,cat:guessCategorySmart(url,desc),label:r.c[i.label]?.v||"Unknown"};
  }).filter(d=>d.url);
  sessionStorage.setItem(CACHE_KEY,JSON.stringify(data));
  populateCategories();
  render();
  document.getElementById("lastUpdated").textContent=
-  "Last updated: "+new Date().toLocaleString();
+  "Updated · " + new Date().toLocaleString();
 }
 
 /* ---------- CATEGORY FILTER ---------- */
@@ -419,5 +448,3 @@ loadData();
 
 </body>
 </html>
-
-
