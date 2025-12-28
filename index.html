@@ -14,7 +14,6 @@
   --accent:#4dabf7;
 }
 
-/* single-source light mode (stable) */
 .light{
   --bg:#f0fdf4;
   --card:#ffffff;
@@ -31,7 +30,6 @@ body{
   color:var(--text);
 }
 
-/* THEME */
 #themeToggle{
   position:fixed;
   top:16px;
@@ -45,12 +43,10 @@ body{
   color:var(--text);
 }
 
-/* HEADER */
 header{text-align:center;margin-bottom:28px;}
 header h1{margin:0;font-size:32px;}
 header p{margin:6px 0 0;font-size:14px;color:var(--muted);}
 
-/* CONTROLS */
 .controls{
   display:flex;
   gap:10px;
@@ -73,25 +69,20 @@ button{background:#444;color:#fff;cursor:pointer;}
   font-size:18px;
 }
 
-/* META */
 #metaBar{
   text-align:center;
+  margin:14px 0;
   font-size:12px;
   color:var(--muted);
-  margin:14px 0 22px;
-  display:flex;
-  justify-content:center;
-  gap:14px;
 }
+#metaBar span{margin:0 4px;}
 
-/* GRID */
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
   gap:18px;
 }
 
-/* CARD */
 .card{
   background:var(--card);
   padding:14px;
@@ -103,7 +94,6 @@ button{background:#444;color:#fff;cursor:pointer;}
   position:relative;
 }
 
-/* TITLE */
 .title{
   display:flex;
   align-items:center;
@@ -116,9 +106,8 @@ button{background:#444;color:#fff;cursor:pointer;}
   overflow:hidden;
   text-overflow:ellipsis;
 }
-.favicon{width:20px;height:20px;border-radius:6px;}
+.favicon{width:20px;height:20px;border-radius:6px;flex-shrink:0;}
 
-/* CATEGORY */
 .badge{
   align-self:flex-start;
   font-size:11px;
@@ -128,7 +117,6 @@ button{background:#444;color:#fff;cursor:pointer;}
   color:#cfe6ff;
 }
 
-/* DESCRIPTION */
 .desc{
   font-size:12.5px;
   color:var(--muted);
@@ -139,15 +127,14 @@ button{background:#444;color:#fff;cursor:pointer;}
   overflow:hidden;
 }
 
-/* STATUS */
 .status{
   position:absolute;
   right:14px;
   bottom:12px;
   font-size:11.5px;
   display:flex;
+  align-items:center;
   gap:6px;
-  color:var(--muted);
 }
 .dot{width:9px;height:9px;border-radius:50%;}
 .working{background:#22c55e;}
@@ -155,7 +142,6 @@ button{background:#444;color:#fff;cursor:pointer;}
 .redirect{background:#facc15;}
 .unknown{background:#9ca3af;}
 
-/* FAVORITE */
 .star{
   position:absolute;
   top:12px;
@@ -166,22 +152,20 @@ button{background:#444;color:#fff;cursor:pointer;}
 }
 .star.active{color:#f59e0b;}
 
-/* HELPERS */
 .helper{
   font-size:12px;
   color:var(--muted);
   padding:8px 4px;
 }
 
-/* FOOTER */
 footer{
   margin-top:60px;
   text-align:center;
   font-size:12px;
   color:var(--muted);
+  line-height:1.6;
 }
 
-/* ABOUT MODAL */
 #aboutModal{
   display:none;
   position:fixed;
@@ -220,8 +204,9 @@ footer{
 </div>
 
 <div id="metaBar">
-  <div id="toolCount"></div>
-  <div id="lastUpdated"></div>
+  <span id="toolCount"></span>
+  <span>·</span>
+  <span id="lastUpdated"></span>
 </div>
 
 <div class="section">
@@ -253,7 +238,7 @@ footer{
   <div id="aboutBox">
     <h3>About ToolStack</h3>
     <p>ToolStack is a curated, read-only discovery platform that tracks live availability of tools.</p>
-    <p><b>Built &amp; Developed by Murali</b></p>
+    <p><b>Built & Developed by Murali</b></p>
     <p>Data sourced from public links. No ownership implied.</p>
     <button onclick="closeAbout()">Close</button>
   </div>
@@ -267,11 +252,9 @@ let data=[], lastFetchTime=null;
 let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
 let recent=JSON.parse(localStorage.getItem("recent")||"[]");
 
-/* ABOUT */
 function openAbout(){aboutModal.style.display="flex";}
 function closeAbout(){aboutModal.style.display="none";}
 
-/* THEME */
 if(localStorage.getItem("theme")==="light"){
  document.body.classList.add("light");
  themeToggle.textContent="☀️";
@@ -283,131 +266,94 @@ themeToggle.onclick=()=>{
  themeToggle.textContent=l?"☀️":"🌙";
 };
 
-/* HELPERS */
 function updateHelpers(){
  favHelper.textContent=favorites.length? "" : "⭐ Star tools to see them here";
  recentHelper.textContent=recent.length? "" : "🕒 Tools you open appear here";
 }
 
-/* UPDATED TIME */
 function updateTime(){
  if(!lastFetchTime) return;
  const mins=Math.floor((Date.now()-lastFetchTime)/60000);
  lastUpdated.textContent=mins<1?"Updated just now":`Updated ${mins} min ago`;
 }
+
 setInterval(updateTime,60000);
 
-/* TOOL COUNT */
-function updateToolCount(){
- toolCount.textContent=`${data.length} tools`;
-}
-
-/* LOAD DATA */
 async function loadData(){
  try{
   const res=await fetch(SHEET_URL);
   const txt=await res.text();
   const json=JSON.parse(txt.substring(47).slice(0,-2));
   const cols=json.table.cols.map(c=>c.label.toLowerCase());
-  const i={
-    url:cols.indexOf("url"),
-    desc:cols.indexOf("description"),
-    label:cols.indexOf("status_label"),
-    cat:cols.indexOf("category")
-  };
-  data=json.table.rows.map(r=>{
-    return{
-      url:r.c[i.url]?.v||"",
-      desc:r.c[i.desc]?.v||"",
-      label:r.c[i.label]?.v||"Unknown",
-      cat:r.c[i.cat]?.v||"Uncategorized"
-    };
-  }).filter(d=>d.url);
+  const i={url:cols.indexOf("url"),desc:cols.indexOf("description"),label:cols.indexOf("status_label")};
+  data=json.table.rows.map(r=>({
+    url:r.c[i.url]?.v||"",
+    desc:r.c[i.desc]?.v||"",
+    label:r.c[i.label]?.v||"Unknown"
+  })).filter(d=>d.url);
   lastFetchTime=Date.now();
-  updateToolCount();
+  toolCount.textContent=`${data.length} tools`;
+  categoryFilter.value="all";
+  search.value="";
   render();
  }catch{
   grid.innerHTML="<div class='helper'>⚠ Connect to internet to load tools</div>";
  }
 }
 
-/* RENDER */
 function render(){
- grid.innerHTML="";
- favGrid.innerHTML="";
- recentGrid.innerHTML="";
-
+ grid.innerHTML=favGrid.innerHTML=recentGrid.innerHTML="";
  const q=search.value.toLowerCase();
  const c=categoryFilter.value;
-
  const filtered=data.filter(t=>{
-   if(q && !t.url.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return false;
-   if(c!=="all" && t.cat!==c) return false;
-   return true;
+  if(q && !t.url.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return false;
+  if(c!=="all" && t.cat!==c) return false;
+  return true;
  });
-
  filtered.forEach(t=>grid.appendChild(createCard(t)));
-
- favorites.map(f=>filtered.find(d=>d.url===f)).filter(Boolean)
+ favorites.map(f=>data.find(d=>d.url===f)).filter(Boolean)
    .forEach(t=>favGrid.appendChild(createCard(t)));
-
- recent.map(r=>filtered.find(d=>d.url===r)).filter(Boolean)
+ recent.map(r=>data.find(d=>d.url===r)).filter(Boolean)
    .forEach(t=>recentGrid.appendChild(createCard(t)));
-
  updateHelpers();
  updateTime();
 }
 
-/* CARD */
 function createCard(t){
  const card=document.createElement("div");
  card.className="card";
  const fav=favorites.includes(t.url);
- const host=new URL(t.url).hostname.replace(/^www\./,"");
- const title=host.split(".")[0].replace(/^\w/,c=>c.toUpperCase());
-
  let dot="unknown";
  const l=t.label.toLowerCase();
  if(l.includes("working")) dot="working";
  else if(l.includes("redirect")) dot="redirect";
  else if(l.includes("blocked")||l.includes("not")) dot="broken";
-
+ const host=new URL(t.url).hostname.replace(/^www\./,"");
  card.innerHTML=`
   <span class="star ${fav?"active":""}">★</span>
   <a class="title" href="${t.url}" target="_blank">
     <img class="favicon" src="https://www.google.com/s2/favicons?domain=${host}">
-    ${title}
+    ${host.split(".")[0]}
   </a>
-  <div class="badge">${t.cat}</div>
   <div class="desc">${t.desc}</div>
   <div class="status"><span class="dot ${dot}"></span>${t.label}</div>
  `;
-
  card.querySelector(".star").onclick=e=>{
   e.stopPropagation();
   fav?favorites=favorites.filter(f=>f!==t.url):favorites.push(t.url);
   localStorage.setItem("favorites",JSON.stringify(favorites));
   render();
  };
-
  card.querySelector(".title").onclick=()=>{
   recent=recent.filter(r=>r!==t.url);
   recent.unshift(t.url);
   recent=recent.slice(0,5);
   localStorage.setItem("recent",JSON.stringify(recent));
  };
-
  return card;
 }
 
-/* CONTROLS */
-search.oninput=render;
-categoryFilter.onchange=render;
-clearBtn.onclick=()=>{
- search.value="";
- categoryFilter.value="all";
- render();
-};
+clearBtn.onclick=()=>{search.value="";categoryFilter.value="all";render();}
 refreshBtn.onclick=()=>loadData();
 
 loadData();
