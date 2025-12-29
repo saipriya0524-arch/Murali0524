@@ -279,9 +279,7 @@ body.light{
   <p>Disclaimer: We are not responsible for any data loss, misuse, or external service changes.</p>
   
   <nav class="footer-links">
-    <a href="#" onclick="openAbout()">About</a> ·
-    <a href="#" onclick="openAbout()">Credits</a> ·
-    <a href="#" onclick="openAbout()">Disclaimer</a>
+    <a href="#" onclick="openAbout()">About· Credits · Disclaimer</a>
   </nav>
 </footer>
 
@@ -290,7 +288,7 @@ body.light{
   <div id="aboutBox">
     <h3>About ToolStack</h3>
     <p>ToolStack is a curated, read-only discovery platform that tracks live availability of tools.</p>
-    <p><b>Built & Developed by Murali</b></p>
+    <p><b>Built & Maintained by Murali</b></p>
     <p>Data sourced from public links. No ownership implied.</p>
     <button onclick="closeAbout()">Close</button>
   </div>
@@ -374,6 +372,13 @@ themeToggle.onclick=()=>{
   themeToggle.textContent=l?"☀️":"🌙";
 };
 
+  /*---- Helpers----- */
+
+function updateHelpers(){
+ favHelper.textContent=favorites.length? "" : "⭐ Star tools to see them here";
+ recentHelper.textContent=recent.length? "" : "🕒 Tools you open appear here";
+}
+  
 /* ---------- DOM ---------- */
 const grid=document.getElementById("grid");
 const favGrid=document.getElementById("favGrid");
@@ -495,10 +500,8 @@ clearBtn.onclick=()=>{search.value="";categoryFilter.value="all";render();}
 refreshBtn.onclick=()=>{sessionStorage.removeItem(CACHE_KEY);loadData(true);};
 
 loadData();
+
 </script>
 
 </body>
 </html>
-
-
-
