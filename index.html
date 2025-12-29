@@ -176,6 +176,25 @@ footer{
   line-height:1.6;
 }
 
+#aboutModal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  align-items:center;
+  justify-content:center;
+}
+#aboutBox{
+  background:var(--card);
+  padding:24px;
+  max-width:520px;
+  border-radius:14px;
+}
+#aboutBox button{
+  margin-top:16px;
+  background:var(--accent);
+}
+
 /* ======================================================
    v7.8 APPEND-ONLY UI REFINEMENTS (SAFE OVERRIDES)
    ====================================================== */
@@ -235,7 +254,7 @@ body.light{
   <input id="search" placeholder="Search tools…">
   <select id="categoryFilter"><option value="all">All Categories</option></select>
   <button id="clearBtn">Clear</button>
-  <button id="refreshBtn">Refresh</button>
+  <button id="refreshBtn"> ↻ </button>
 </div>
 
 <div id="lastUpdated"></div>
@@ -260,6 +279,16 @@ body.light{
   Disclaimer: We are not responsible for any data loss, misuse, or external service changes.
 </footer>
 
+  <div id="aboutModal">
+  <div id="aboutBox">
+    <h3>About ToolStack</h3>
+    <p>ToolStack is a curated, read-only discovery platform that tracks live availability of tools.</p>
+    <p><b>Built & Developed by Murali</b></p>
+    <p>Data sourced from public links. No ownership implied.</p>
+    <button onclick="closeAbout()">Close</button>
+  </div>
+</div>
+  
 <script>
 const SHEET_URL =
 "https://docs.google.com/spreadsheets/d/1_lz8NoO69rbSpE0yyTgJaxy0erMFmcvK1L88P40JJlY/gviz/tq?gid=1452664636&tqx=out:json&tq=select * limit 1000";
@@ -448,3 +477,4 @@ loadData();
 
 </body>
 </html>
+
